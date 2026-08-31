@@ -3,5 +3,5 @@ set "PATH=C:\Users\pedro\AppData\Local\Programs\nodejs;C:\Users\pedro\AppData\Lo
 echo ==================================================
 echo    MyFinance — Enviando para o GitHub (main)
 echo ==================================================
-git push -u origin main
+git push -u origin main --force
 pause

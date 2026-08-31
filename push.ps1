@@ -7,7 +7,7 @@ Write-Host "==================================================" -ForegroundColor
 $gitExe = "C:\Users\pedro\AppData\Local\Programs\MinGit\cmd\git.exe"
 
 if (Test-Path $gitExe) {
-    & $gitExe push -u origin main
+    & $gitExe push -u origin main --force
 } else {
     Write-Error "Git não foi localizado em $gitExe"
 }
