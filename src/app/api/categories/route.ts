@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/auth';
 import { DEFAULT_CATEGORIES } from '@/lib/seed';
 import { Category } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const auth = getAuthUser(req);

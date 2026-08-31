@@ -3,6 +3,8 @@ import { getDatabasePool, memoryStore } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import { Strategy } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const auth = getAuthUser(req);

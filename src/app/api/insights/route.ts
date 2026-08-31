@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/auth';
 import { generateDeterministicInsights } from '@/lib/insights-engine';
 import { Insight } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const auth = getAuthUser(req);
