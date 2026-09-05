@@ -1,4 +1,4 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { neon, Pool, neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
 import { DEFAULT_CATEGORIES } from './seed';
 import {
@@ -13,34 +13,87 @@ import {
   Insight,
 } from './types';
 
-// Support node environment for websockets if needed
+// Support node environment for websockets
 if (typeof window === 'undefined') {
-  neonConfig.webSocketConstructor = ws;
+  try {
+    neonConfig.webSocketConstructor = ws;
+  } catch {
+    // ignore
+  }
 }
 
-// Global singleton pool for connection reuse
+// Wrapper to support both direct query pool and sql
+export class NeonDatabaseAdapter {
+  private sql: any;
+  private pool: any;
+
+  constructor(databaseUrl: string) {
+    this.sql = neon(databaseUrl);
+    try {
+      this.pool = new Pool({ connectionString: databaseUrl });
+    } catch {
+      this.pool = null;
+    }
+  }
+
+  async query(text: string, params: any[] = []): Promise<{ rows: any[] }> {
+    try {
+      if (this.pool) {
+        return await this.pool.query(text, params);
+      }
+    } catch (poolErr) {
+      // fallback to http neon driver
+    }
+
+    try {
+      // Execute via HTTP neon driver (zero websocket dependency, works 100% on Vercel & edge)
+      let formattedSql = text;
+      params.forEach((param, index) => {
+        const placeholder = new RegExp(`\\$${index + 1}\\b`, 'g');
+        let val = param;
+        if (val === null || val === undefined) {
+          formattedSql = formattedSql.replace(placeholder, 'NULL');
+        } else if (typeof val === 'number') {
+          formattedSql = formattedSql.replace(placeholder, `${val}`);
+        } else if (typeof val === 'boolean') {
+          formattedSql = formattedSql.replace(placeholder, val ? 'TRUE' : 'FALSE');
+        } else {
+          // Escape single quotes for SQL string literal
+          const escaped = String(val).replace(/'/g, "''");
+          formattedSql = formattedSql.replace(placeholder, `'${escaped}'`);
+        }
+      });
+
+      const rows = await this.sql(formattedSql);
+      return { rows: Array.isArray(rows) ? rows : [] };
+    } catch (sqlErr: any) {
+      console.error('Neon SQL execution error:', sqlErr);
+      throw sqlErr;
+    }
+  }
+}
+
+// Global singleton
 declare global {
-  var _neonPool: any | undefined;
+  var _neonAdapter: NeonDatabaseAdapter | undefined;
 }
 
-export function getDatabasePool(): any | null {
+export function getDatabasePool(): NeonDatabaseAdapter | null {
   const databaseUrl =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRES_PRISMA_URL ||
     process.env.DATABASE_URL_UNPOOLED;
 
-  if (!databaseUrl || databaseUrl.includes('sample-123456')) {
+  if (!databaseUrl || databaseUrl.includes('sample-123456') || databaseUrl.includes('db.example.com')) {
     return null;
   }
 
-  if (!global._neonPool) {
-    global._neonPool = new Pool({
-      connectionString: databaseUrl,
-    });
+  if (!global._neonAdapter) {
+    global._neonAdapter = new NeonDatabaseAdapter(databaseUrl);
   }
 
-  return global._neonPool;
+  return global._neonAdapter;
 }
 
 // In-Memory Fallback
@@ -68,7 +121,7 @@ export const memoryStore: LocalStoreState = {
   insights: [],
 };
 
-export async function initPostgresSchema(dbPool: Pool): Promise<void> {
+export async function initPostgresSchema(dbPool: any): Promise<void> {
   const schemaSql = `
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -199,19 +252,12 @@ export async function seedUserDefaultCategories(userId: string): Promise<void> {
   }));
 
   if (pool) {
-    const values: any[] = [];
-    const placeholders = defaultCats
-      .map((cat, i) => {
-        const offset = i * 5;
-        values.push(cat.id, userId, cat.name, cat.icon, cat.type);
-        return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
-      })
-      .join(', ');
-
-    await pool.query(
-      `INSERT INTO categories (id, user_id, name, icon, type) VALUES ${placeholders}`,
-      values
-    );
+    for (const cat of defaultCats) {
+      await pool.query(
+        'INSERT INTO categories (id, user_id, name, icon, type) VALUES ($1, $2, $3, $4, $5)',
+        [cat.id, userId, cat.name, cat.icon, cat.type]
+      );
+    }
   } else {
     memoryStore.categories.push(...defaultCats);
   }
