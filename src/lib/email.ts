@@ -124,37 +124,7 @@ Se você não solicitou esta alteração, ignore este e-mail.
     return { success: true, messageId: info.messageId, provider: 'smtp' };
   }
 
-  // 2. Resend API key support if present
-  if (process.env.RESEND_API_KEY) {
-    const fromAddress = process.env.EMAIL_FROM || 'MyFinance <onboarding@resend.dev>';
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [to],
-        subject: `Seu código de segurança MyFinance: ${code}`,
-        html: htmlContent,
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      console.error('[EMAIL RESEND ERROR]', data);
-      if (data?.message?.includes('testing emails to your own email address')) {
-        throw new Error('No modo de teste inicial do Resend, envie para o e-mail cadastrado na sua conta. Para liberar para qualquer destinatário público, conecte um domínio em resend.com/domains.');
-      }
-      throw new Error(data?.message || 'Falha ao disparar e-mail via Resend.');
-    }
-
-    console.log(`[EMAIL] Sent via Resend to ${to}:`, data);
-    return { success: true, resendId: data.id, provider: 'resend' };
-  }
-
-  // 3. Fallback: Ethereal test inbox or development logger
+  // 2. Fallback: Ethereal test inbox or development logger (when SMTP is not configured yet)
   try {
     const testAccount = await nodemailer.createTestAccount();
     const testTransporter = nodemailer.createTransport({
