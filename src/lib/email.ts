@@ -91,12 +91,15 @@ Se você não solicitou esta alteração, ignore este e-mail.
   // 1. Real SMTP transport (Gmail, Outlook, Brevo, custom SMTP)
   if (smtpUser && smtpPass) {
     const isGmail = smtpHost.includes('gmail');
+    const cleanPass = smtpPass.replace(/\s+/g, '');
+    const cleanFrom = isGmail ? `"MyFinance" <${smtpUser}>` : fromAddress;
+
     const transporter = isGmail
       ? nodemailer.createTransport({
           service: 'gmail',
           auth: {
             user: smtpUser,
-            pass: smtpPass,
+            pass: cleanPass,
           },
         })
       : nodemailer.createTransport({
@@ -105,7 +108,7 @@ Se você não solicitou esta alteração, ignore este e-mail.
           secure: smtpPort === 465,
           auth: {
             user: smtpUser,
-            pass: smtpPass,
+            pass: cleanPass,
           },
           tls: {
             rejectUnauthorized: false,
@@ -113,7 +116,7 @@ Se você não solicitou esta alteração, ignore este e-mail.
         });
 
     const info = await transporter.sendMail({
-      from: fromAddress,
+      from: cleanFrom,
       to,
       subject: `Seu código de segurança MyFinance: ${code}`,
       text: textContent,
