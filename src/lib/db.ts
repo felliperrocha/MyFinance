@@ -96,6 +96,17 @@ export function getDatabasePool(): NeonDatabaseAdapter | null {
   return global._neonAdapter;
 }
 
+export const db = {
+  async query(text: string, params: any[] = []): Promise<{ rows: any[] }> {
+    const pool = getDatabasePool();
+    if (pool) {
+      return pool.query(text, params);
+    }
+    // Return empty fallback if not connected
+    return { rows: [] };
+  },
+};
+
 // In-Memory Fallback
 export interface LocalStoreState {
   users: User[];

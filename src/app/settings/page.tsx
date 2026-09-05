@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
-import { Database, User, Bell, Check, Save } from 'lucide-react';
+import { Database, User, Bell, Check, Save, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SettingsPage() {
@@ -18,6 +18,14 @@ export default function SettingsPage() {
   });
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Change password states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [pwdSuccess, setPwdSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -60,6 +68,48 @@ export default function SettingsPage() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdError(null);
+    setPwdSuccess(null);
+
+    if (newPassword !== confirmPassword) {
+      setPwdError('A confirmação não confere com a nova senha digitada.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPwdError('A nova senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    setPwdLoading(true);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setPwdError(data.error || 'Erro ao alterar a senha.');
+        return;
+      }
+
+      setPwdSuccess(data.message || 'Senha alterada com sucesso!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPwdSuccess(null), 4000);
+    } catch (err) {
+      console.error('Error changing password:', err);
+      setPwdError('Erro de conexão ao alterar a senha.');
+    } finally {
+      setPwdLoading(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -70,7 +120,7 @@ export default function SettingsPage() {
             Configurações da Conta
           </h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--color-medium-gray)', marginTop: '0.2rem' }}>
-            Gerencie seu perfil, preferências financeiras, notificações e conexão com banco de dados.
+            Gerencie seu perfil, preferências financeiras, segurança e conexão com banco de dados.
           </p>
         </div>
 
@@ -164,36 +214,141 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Database & Neon PostgreSQL Status */}
-          <div className="mf-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '0.75rem' }}>
-              <Database size={18} color="var(--color-primary-black)" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-primary-black)' }}>
-                Persistência & Neon PostgreSQL
-              </h3>
-            </div>
-
-            <div style={{ backgroundColor: 'var(--color-surface-hover)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '0.8125rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ color: 'var(--color-medium-gray)' }}>Motor de Armazenamento Ativo:</span>
-                <span className="mf-badge mf-badge-positive" style={{ fontWeight: 600 }}>
-                  {dbStatus.type}
-                </span>
-              </div>
-              <p style={{ color: 'var(--color-dark-gray)', lineHeight: 1.4 }}>
-                Para conectar seu banco de dados na nuvem da <strong>Neon PostgreSQL</strong>, configure sua variável de ambiente <code style={{ backgroundColor: 'var(--color-light-gray)', padding: '2px 5px', borderRadius: '3px' }}>DATABASE_URL</code> no arquivo <code style={{ backgroundColor: 'var(--color-light-gray)', padding: '2px 5px', borderRadius: '3px' }}>.env.local</code>. O MyFinance gerencia as tabelas e migrações automaticamente.
-              </p>
-            </div>
-          </div>
-
-          {/* Save Button */}
+          {/* Save Button for profile/preferences */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button type="submit" disabled={loading} className="mf-btn mf-btn-primary">
               <Save size={16} />
-              <span>{loading ? 'Salvando...' : 'Salvar Alterações'}</span>
+              <span>{loading ? 'Salvando...' : 'Salvar Alterações de Perfil'}</span>
             </button>
           </div>
         </form>
+
+        {/* Security & Password Reset for Logged In User */}
+        <div className="mf-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '0.75rem' }}>
+            <Lock size={18} color="var(--color-primary-black)" />
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-primary-black)' }}>
+              Segurança & Redefinição de Senha
+            </h3>
+          </div>
+
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-medium-gray)' }}>
+            Atualize sua senha de acesso para manter sua conta protegida.
+          </p>
+
+          {pwdSuccess && (
+            <div
+              style={{
+                backgroundColor: 'var(--color-positive-bg)',
+                border: '1px solid var(--color-positive-border)',
+                color: 'var(--color-positive-text)',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+              }}
+            >
+              <ShieldCheck size={16} />
+              <span>{pwdSuccess}</span>
+            </div>
+          )}
+
+          {pwdError && (
+            <div
+              style={{
+                backgroundColor: 'var(--color-danger-bg)',
+                border: '1px solid var(--color-danger-border)',
+                color: 'var(--color-danger-text)',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+              }}
+            >
+              <AlertCircle size={16} />
+              <span>{pwdError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label className="mf-label">Senha Atual</label>
+              <input
+                type="password"
+                className="mf-input"
+                placeholder="Digite sua senha atual"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label className="mf-label">Nova Senha</label>
+                <input
+                  type="password"
+                  className="mf-input"
+                  placeholder="Mínimo de 6 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="mf-label">Confirmar Nova Senha</label>
+                <input
+                  type="password"
+                  className="mf-input"
+                  placeholder="Repita a nova senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+              <button
+                type="submit"
+                disabled={pwdLoading}
+                className="mf-btn mf-btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <Lock size={15} />
+                <span>{pwdLoading ? 'Atualizando Senha...' : 'Atualizar Minha Senha'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Database & Neon PostgreSQL Status */}
+        <div className="mf-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '0.75rem' }}>
+            <Database size={18} color="var(--color-primary-black)" />
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-primary-black)' }}>
+              Persistência & Neon PostgreSQL
+            </h3>
+          </div>
+
+          <div style={{ backgroundColor: 'var(--color-surface-hover)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '0.8125rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span style={{ color: 'var(--color-medium-gray)' }}>Motor de Armazenamento Ativo:</span>
+              <span className="mf-badge mf-badge-positive" style={{ fontWeight: 600 }}>
+                {dbStatus.type}
+              </span>
+            </div>
+            <p style={{ color: 'var(--color-dark-gray)', lineHeight: 1.4 }}>
+              Banco de dados na nuvem da <strong>Neon PostgreSQL</strong> configurado e ativo. O MyFinance gerencia os lançamentos, contas, cartões e orçamentos automaticamente de forma criptografada e segura.
+            </p>
+          </div>
+        </div>
       </main>
     </>
   );
