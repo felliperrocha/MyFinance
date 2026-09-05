@@ -33,6 +33,20 @@ export class NeonDatabaseAdapter {
     try {
       // Execute via instant HTTP neon driver (zero websocket latency/handshake, ultra fast in serverless & Node)
       if (params.length === 0) {
+        // If text contains multiple DDL/DML statements separated by semicolons, run them sequentially
+        const statements = text
+          .split(';')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+
+        if (statements.length > 1) {
+          let lastRows: any[] = [];
+          for (const stmt of statements) {
+            lastRows = await this.sql(stmt);
+          }
+          return { rows: Array.isArray(lastRows) ? lastRows : [] };
+        }
+
         const rows = await this.sql(text);
         return { rows: Array.isArray(rows) ? rows : [] };
       }

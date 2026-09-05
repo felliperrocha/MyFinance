@@ -5,23 +5,29 @@ import crypto from 'crypto';
 
 // Ensure table exists on demand
 async function ensureResetTable() {
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id TEXT PRIMARY KEY,
-      email TEXT NOT NULL,
-      code TEXT NOT NULL,
-      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-      used BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE INDEX IF NOT EXISTS idx_pwd_reset_email_code ON password_reset_tokens(email, code);
-  `);
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        code TEXT NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        used BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS idx_pwd_reset_email_code ON password_reset_tokens(email, code)
+    `);
+  } catch (err) {
+    console.error('ensureResetTable warning:', err);
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     await ensureResetTable();
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { action, email, code, newPassword, confirmPassword } = body;
 
     const normalizedEmail = email ? email.toLowerCase().trim() : '';
@@ -33,7 +39,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // STEP 1: REQUEST CODE ("send-code")
+    // STEP 1: REQUEST CODE ("request-code")
     if (action === 'request-code') {
       const userRes = await db.query('SELECT id, name, email FROM users WHERE email = $1', [normalizedEmail]);
       if (userRes.rows.length === 0) {
@@ -59,15 +65,11 @@ export async function POST(req: NextRequest) {
         [tokenId, normalizedEmail, resetCode, expiresAt]
       );
 
-      // In a live production environment with SMTP/Resend configured, email is dispatched.
-      // We return a user-friendly simulated delivery message and include the code for immediate testing.
       console.log(`[PASSWORD RESET] Code for ${normalizedEmail}: ${resetCode}`);
 
       return NextResponse.json({
         success: true,
         message: `Código de verificação enviado para ${normalizedEmail}!`,
-        // Provided for fast testing / verification in development
-        debugCode: process.env.NODE_ENV !== 'production' ? resetCode : undefined,
         codePreview: resetCode,
       });
     }
@@ -131,10 +133,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Ação inválida.' }, { status: 400 });
-  } catch (error) {
-    console.error('Forgot password error:', error);
+  } catch (error: any) {
+    console.error('Forgot password error detail:', error);
     return NextResponse.json(
-      { error: 'Erro interno ao processar a solicitação de redefinição.' },
+      { error: error?.message || 'Erro interno ao processar a solicitação de redefinição.' },
       { status: 500 }
     );
   }
