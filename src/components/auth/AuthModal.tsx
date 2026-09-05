@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { User } from '@/lib/types';
-import { AlertCircle, CheckCircle2, ArrowLeft, KeyRound } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ArrowLeft, KeyRound, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface AuthModalProps {
@@ -21,8 +21,11 @@ export default function AuthModal({
 }: AuthModalProps) {
   const { setUser } = useAuth();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(initialMode);
+  const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request');
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +35,7 @@ export default function AuthModal({
 
   useEffect(() => {
     setMode(initialMode);
+    setForgotStep('request');
     setError(null);
     setSuccessMessage(null);
   }, [initialMode, isOpen]);
@@ -41,7 +45,96 @@ export default function AuthModal({
     setError(null);
     setSuccessMessage(null);
 
-    if (mode === 'register' || mode === 'forgot') {
+    // --- FORGOT PASSWORD STEP 1: REQUEST CODE ---
+    if (mode === 'forgot' && forgotStep === 'request') {
+      if (!email || !email.includes('@')) {
+        setError('Por favor, informe um endereço de e-mail válido.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'request-code', email }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || 'Não foi possível enviar o código.');
+          return;
+        }
+
+        // Autofill code preview in dev/demo if returned
+        if (data.codePreview) {
+          setCode(data.codePreview);
+        }
+
+        setSuccessMessage(data.message || 'Código de verificação gerado e enviado com sucesso!');
+        setForgotStep('verify');
+      } catch (err) {
+        console.error('Forgot password step 1 error:', err);
+        setError('Falha de conexão com o servidor. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // --- FORGOT PASSWORD STEP 2: VERIFY CODE & REDEFINE ---
+    if (mode === 'forgot' && forgotStep === 'verify') {
+      if (!code || code.trim().length < 4) {
+        setError('Digite o código de 6 dígitos recebido.');
+        return;
+      }
+      if (password.length < 6) {
+        setError('A nova senha deve ter no mínimo 6 caracteres.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('A confirmação não coincide com a nova senha digitada.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'reset-password',
+            email,
+            code,
+            newPassword: password,
+            confirmPassword,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || 'Código incorreto ou expirado.');
+          return;
+        }
+
+        setSuccessMessage('Senha alterada com sucesso! Redirecionando para login...');
+        setPassword('');
+        setConfirmPassword('');
+        setCode('');
+        setTimeout(() => {
+          setMode('login');
+          setForgotStep('request');
+          setSuccessMessage(null);
+        }, 2200);
+      } catch (err) {
+        console.error('Forgot password step 2 error:', err);
+        setError('Falha ao redefinir a senha. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // --- REGISTER VALIDATION ---
+    if (mode === 'register') {
       if (password !== confirmPassword) {
         setError('A confirmação de senha não confere com a senha digitada.');
         return;
@@ -52,29 +145,9 @@ export default function AuthModal({
       }
     }
 
+    // --- LOGIN & REGISTER ---
     setLoading(true);
     try {
-      if (mode === 'forgot') {
-        const res = await fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, newPassword: password, confirmPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Erro ao redefinir a senha.');
-          return;
-        }
-        setSuccessMessage(data.message || 'Senha alterada com sucesso! Entre agora.');
-        setPassword('');
-        setConfirmPassword('');
-        setTimeout(() => {
-          setMode('login');
-          setSuccessMessage(null);
-        }, 2500);
-        return;
-      }
-
       const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
       const body =
         mode === 'register'
@@ -90,7 +163,7 @@ export default function AuthModal({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Ocorreu um erro. Verifique seus dados.');
+        setError(data.error || 'Credenciais inválidas. Verifique seus dados.');
         return;
       }
 
@@ -105,7 +178,7 @@ export default function AuthModal({
       }
     } catch (err) {
       console.error('Auth error:', err);
-      setError('Erro de conexão com o servidor. Tente novamente.');
+      setError('Erro de conexão ao autenticar. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -147,14 +220,18 @@ export default function AuthModal({
           ? 'Acessar MyFinance'
           : mode === 'register'
           ? 'Criar sua Conta'
-          : 'Redefinir Senha'
+          : forgotStep === 'request'
+          ? 'Recuperar Senha'
+          : 'Validar Código & Nova Senha'
       }
       subtitle={
         mode === 'login'
           ? 'Entre com sua conta para gerenciar seus lançamentos e orçamentos.'
           : mode === 'register'
           ? 'Cadastre-se para planejar, controlar e conquistar seus objetivos.'
-          : 'Informe seu e-mail e defina sua nova senha de acesso.'
+          : forgotStep === 'request'
+          ? 'Informe seu e-mail cadastrado para receber o código seguro de 6 dígitos.'
+          : `Insira o código enviado para ${email} e defina sua nova senha.`
       }
       maxWidth="460px"
     >
@@ -219,7 +296,11 @@ export default function AuthModal({
           <button
             type="button"
             onClick={() => {
-              setMode('login');
+              if (forgotStep === 'verify') {
+                setForgotStep('request');
+              } else {
+                setMode('login');
+              }
               setError(null);
               setSuccessMessage(null);
             }}
@@ -238,7 +319,7 @@ export default function AuthModal({
             }}
           >
             <ArrowLeft size={14} />
-            <span>Voltar para o Login</span>
+            <span>{forgotStep === 'verify' ? 'Voltar e reenviar código' : 'Voltar para o Login'}</span>
           </button>
         )}
 
@@ -340,6 +421,7 @@ export default function AuthModal({
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* REGISTER: Name input */}
           {mode === 'register' && (
             <div>
               <label className="mf-label">Nome Completo</label>
@@ -355,60 +437,123 @@ export default function AuthModal({
             </div>
           )}
 
-          <div>
-            <label className="mf-label">E-mail</label>
-            <input
-              type="email"
-              className="mf-input"
-              placeholder="seu.email@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus={mode !== 'register'}
-            />
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-              <label className="mf-label" style={{ marginBottom: 0 }}>
-                {mode === 'forgot' ? 'Nova Senha' : 'Senha'}
-              </label>
-              {mode === 'login' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('forgot');
-                    setError(null);
-                    setSuccessMessage(null);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--color-primary-black)',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: 0,
-                  }}
-                >
-                  Esqueceu a senha?
-                </button>
-              )}
-            </div>
-            <input
-              type="password"
-              className="mf-input"
-              placeholder={mode === 'login' ? '••••••••' : 'Mínimo 6 caracteres'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          {(mode === 'register' || mode === 'forgot') && (
+          {/* Email input for login, register, and forgot password step 1 */}
+          {(mode !== 'forgot' || forgotStep === 'request') && (
             <div>
-              <label className="mf-label">Confirmação da Nova Senha</label>
+              <label className="mf-label">E-mail</label>
+              <input
+                type="email"
+                className="mf-input"
+                placeholder="seu.email@exemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus={mode !== 'register'}
+              />
+            </div>
+          )}
+
+          {/* FORGOT STEP 2: Verification Code input */}
+          {mode === 'forgot' && forgotStep === 'verify' && (
+            <div style={{ backgroundColor: 'var(--color-surface-hover)', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                <ShieldCheck size={16} color="var(--color-primary-black)" />
+                <label className="mf-label" style={{ marginBottom: 0, fontWeight: 600 }}>
+                  Código de Segurança (6 dígitos)
+                </label>
+              </div>
+              <input
+                type="text"
+                maxLength={6}
+                className="mf-input"
+                placeholder="Ex: 123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                required
+                style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1.15rem', fontWeight: 700 }}
+                autoFocus
+              />
+              <p style={{ fontSize: '0.72rem', color: 'var(--color-medium-gray)', marginTop: '0.4rem', textAlign: 'center' }}>
+                Código válido por 15 minutos.
+              </p>
+            </div>
+          )}
+
+          {/* Password input */}
+          {mode !== 'forgot' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <label className="mf-label" style={{ marginBottom: 0 }}>
+                  Senha
+                </label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('forgot');
+                      setForgotStep('request');
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-primary-black)',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      padding: 0,
+                    }}
+                  >
+                    Esqueceu a senha?
+                  </button>
+                )}
+              </div>
+              <input
+                type="password"
+                className="mf-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {/* FORGOT STEP 2: New Password & Confirm Password */}
+          {mode === 'forgot' && forgotStep === 'verify' && (
+            <>
+              <div>
+                <label className="mf-label">Nova Senha</label>
+                <input
+                  type="password"
+                  className="mf-input"
+                  placeholder="Mínimo de 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mf-label">Confirmação da Nova Senha</label>
+                <input
+                  type="password"
+                  className="mf-input"
+                  placeholder="Repita a nova senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {/* REGISTER: Password confirmation */}
+          {mode === 'register' && (
+            <div>
+              <label className="mf-label">Confirmação da Senha</label>
               <input
                 type="password"
                 className="mf-input"
@@ -433,7 +578,9 @@ export default function AuthModal({
                 ? 'Entrar na Conta'
                 : mode === 'register'
                 ? 'Criar Minha Conta'
-                : 'Salvar Nova Senha'}
+                : forgotStep === 'request'
+                ? 'Enviar Código de Segurança'
+                : 'Confirmar e Redefinir Senha'}
             </button>
           </div>
         </form>

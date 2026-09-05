@@ -22,31 +22,21 @@ if (typeof window === 'undefined') {
   }
 }
 
-// Wrapper to support both direct query pool and sql
 export class NeonDatabaseAdapter {
   private sql: any;
-  private pool: any;
 
   constructor(databaseUrl: string) {
     this.sql = neon(databaseUrl);
-    try {
-      this.pool = new Pool({ connectionString: databaseUrl });
-    } catch {
-      this.pool = null;
-    }
   }
 
   async query(text: string, params: any[] = []): Promise<{ rows: any[] }> {
     try {
-      if (this.pool) {
-        return await this.pool.query(text, params);
+      // Execute via instant HTTP neon driver (zero websocket latency/handshake, ultra fast in serverless & Node)
+      if (params.length === 0) {
+        const rows = await this.sql(text);
+        return { rows: Array.isArray(rows) ? rows : [] };
       }
-    } catch (poolErr) {
-      // fallback to http neon driver
-    }
 
-    try {
-      // Execute via HTTP neon driver (zero websocket dependency, works 100% on Vercel & edge)
       let formattedSql = text;
       params.forEach((param, index) => {
         const placeholder = new RegExp(`\\$${index + 1}\\b`, 'g');
@@ -58,7 +48,6 @@ export class NeonDatabaseAdapter {
         } else if (typeof val === 'boolean') {
           formattedSql = formattedSql.replace(placeholder, val ? 'TRUE' : 'FALSE');
         } else {
-          // Escape single quotes for SQL string literal
           const escaped = String(val).replace(/'/g, "''");
           formattedSql = formattedSql.replace(placeholder, `'${escaped}'`);
         }
@@ -236,8 +225,18 @@ export async function initPostgresSchema(dbPool: any): Promise<void> {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      used BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Performance Indexes
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_pwd_reset_email_code ON password_reset_tokens(email, code);
     CREATE INDEX IF NOT EXISTS idx_income_user_date ON income(user_id, date DESC);
     CREATE INDEX IF NOT EXISTS idx_expenses_user_date ON expenses(user_id, date DESC);
     CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
