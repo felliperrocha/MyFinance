@@ -117,6 +117,7 @@ Se você não solicitou esta alteração, ignore este e-mail.
 
   // 2. Resend API key support if present
   if (process.env.RESEND_API_KEY) {
+    const fromAddress = process.env.EMAIL_FROM || 'MyFinance <onboarding@resend.dev>';
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -124,7 +125,7 @@ Se você não solicitou esta alteração, ignore este e-mail.
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'MyFinance <onboarding@resend.dev>',
+        from: fromAddress,
         to: [to],
         subject: `Seu código de segurança MyFinance: ${code}`,
         html: htmlContent,
@@ -132,6 +133,11 @@ Se você não solicitou esta alteração, ignore este e-mail.
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      console.error('[EMAIL RESEND ERROR]', data);
+      throw new Error(data?.message || 'Falha ao disparar e-mail via Resend.');
+    }
+
     console.log(`[EMAIL] Sent via Resend to ${to}:`, data);
     return { success: true, resendId: data.id, provider: 'resend' };
   }
