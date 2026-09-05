@@ -98,6 +98,9 @@ Se você não solicitou esta alteração, ignore este e-mail.
         user: smtpUser,
         pass: smtpPass,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
 
     const info = await transporter.sendMail({
