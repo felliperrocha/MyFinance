@@ -65,6 +65,15 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('resetEmail') || params.get('resetCode')) {
+        setIsAuthModalOpen(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (user) {
       fetchUserData();
     } else {

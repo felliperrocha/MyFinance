@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { User } from '@/lib/types';
-import { AlertCircle, CheckCircle2, ArrowLeft, KeyRound, Mail, ShieldCheck } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ArrowLeft, ShieldCheck, ExternalLink, Info } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface AuthModalProps {
@@ -30,22 +30,41 @@ export default function AuthModal({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [emailPreviewUrl, setEmailPreviewUrl] = useState<string | null>(null);
+  const [needsSmtpConfig, setNeedsSmtpConfig] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
+    // Check if opened via reset password link (?resetEmail=...&resetCode=...)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlEmail = params.get('resetEmail');
+      const urlCode = params.get('resetCode');
+      if (urlEmail && urlCode) {
+        setMode('forgot');
+        setForgotStep('verify');
+        setEmail(urlEmail);
+        setCode(urlCode);
+        return;
+      }
+    }
+
     setMode(initialMode);
     setForgotStep('request');
     setError(null);
     setSuccessMessage(null);
+    setEmailPreviewUrl(null);
+    setNeedsSmtpConfig(false);
   }, [initialMode, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    setEmailPreviewUrl(null);
 
-    // --- FORGOT PASSWORD STEP 1: REQUEST CODE ---
+    // --- FORGOT PASSWORD STEP 1: REQUEST CODE & DISPATCH EMAIL ---
     if (mode === 'forgot' && forgotStep === 'request') {
       if (!email || !email.includes('@')) {
         setError('Por favor, informe um endereço de e-mail válido.');
@@ -61,16 +80,19 @@ export default function AuthModal({
         });
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error || 'Não foi possível enviar o código.');
+          setError(data.error || 'Não foi possível enviar o e-mail de recuperação.');
           return;
         }
 
-        // Autofill code preview in dev/demo if returned
-        if (data.codePreview) {
-          setCode(data.codePreview);
+        // Keep code input empty so user fills in the code from their email
+        setCode('');
+        setSuccessMessage(data.message || 'Código de verificação enviado! Verifique seu e-mail.');
+        if (data.previewUrl) {
+          setEmailPreviewUrl(data.previewUrl);
         }
-
-        setSuccessMessage(data.message || 'Código de verificação gerado e enviado com sucesso!');
+        if (data.needsSmtpConfig) {
+          setNeedsSmtpConfig(true);
+        }
         setForgotStep('verify');
       } catch (err) {
         console.error('Forgot password step 1 error:', err);
@@ -84,7 +106,7 @@ export default function AuthModal({
     // --- FORGOT PASSWORD STEP 2: VERIFY CODE & REDEFINE ---
     if (mode === 'forgot' && forgotStep === 'verify') {
       if (!code || code.trim().length < 4) {
-        setError('Digite o código de 6 dígitos recebido.');
+        setError('Por favor, digite o código de 6 dígitos que você recebeu por e-mail.');
         return;
       }
       if (password.length < 6) {
@@ -111,7 +133,7 @@ export default function AuthModal({
         });
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error || 'Código incorreto ou expirado.');
+          setError(data.error || 'Código incorreto ou expirado. Verifique o e-mail recebido.');
           return;
         }
 
@@ -123,7 +145,7 @@ export default function AuthModal({
           setMode('login');
           setForgotStep('request');
           setSuccessMessage(null);
-        }, 2200);
+        }, 2000);
       } catch (err) {
         console.error('Forgot password step 2 error:', err);
         setError('Falha ao redefinir a senha. Tente novamente.');
@@ -231,7 +253,7 @@ export default function AuthModal({
           ? 'Cadastre-se para planejar, controlar e conquistar seus objetivos.'
           : forgotStep === 'request'
           ? 'Informe seu e-mail cadastrado para receber o código seguro de 6 dígitos.'
-          : `Insira o código enviado para ${email} e defina sua nova senha.`
+          : `Insira o código de 6 dígitos enviado para ${email} e defina sua nova senha.`
       }
       maxWidth="460px"
     >
@@ -390,13 +412,59 @@ export default function AuthModal({
               padding: '0.65rem 0.85rem',
               borderRadius: '6px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
+              flexDirection: 'column',
+              gap: '0.35rem',
               fontSize: '0.8125rem',
             }}
           >
-            <CheckCircle2 size={15} color="var(--color-positive-text)" />
-            <span>{successMessage}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CheckCircle2 size={15} color="var(--color-positive-text)" />
+              <span>{successMessage}</span>
+            </div>
+
+            {/* Test inbox link if returned */}
+            {emailPreviewUrl && (
+              <a
+                href={emailPreviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: 'var(--color-positive-text)',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  textDecoration: 'underline',
+                  marginTop: '0.25rem',
+                }}
+              >
+                <ExternalLink size={13} />
+                <span>Visualizar e-mail de teste no navegador</span>
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Informative alert if SMTP is not yet set */}
+        {needsSmtpConfig && (
+          <div
+            style={{
+              backgroundColor: 'var(--color-surface-hover)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-dark-gray)',
+              padding: '0.6rem 0.8rem',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.75rem',
+            }}
+          >
+            <Info size={14} color="var(--color-medium-gray)" />
+            <span>
+              Para envio de e-mails para caixas de entrada reais (como Gmail), configure <code>SMTP_USER</code> e <code>SMTP_PASS</code> no arquivo <code>.env.local</code> ou na Vercel.
+            </span>
           </div>
         )}
 
@@ -453,7 +521,7 @@ export default function AuthModal({
             </div>
           )}
 
-          {/* FORGOT STEP 2: Verification Code input */}
+          {/* FORGOT STEP 2: Verification Code input (Starts clean without prefill) */}
           {mode === 'forgot' && forgotStep === 'verify' && (
             <div style={{ backgroundColor: 'var(--color-surface-hover)', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
@@ -466,7 +534,7 @@ export default function AuthModal({
                 type="text"
                 maxLength={6}
                 className="mf-input"
-                placeholder="Ex: 123456"
+                placeholder="Digite o código do e-mail"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 required
@@ -573,7 +641,7 @@ export default function AuthModal({
               style={{ width: '100%', padding: '0.7rem' }}
             >
               {loading
-                ? 'Processando...'
+                ? 'Enviando...'
                 : mode === 'login'
                 ? 'Entrar na Conta'
                 : mode === 'register'

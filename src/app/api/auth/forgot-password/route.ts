@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
+import { sendPasswordResetEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 // Ensure table exists on demand
@@ -58,19 +59,34 @@ export async function POST(req: NextRequest) {
       // Invalidate existing unused codes for this email
       await db.query('UPDATE password_reset_tokens SET used = TRUE WHERE email = $1 AND used = FALSE', [normalizedEmail]);
 
-      // Insert new token
+      // Insert new token in database
       await db.query(
         `INSERT INTO password_reset_tokens (id, email, code, expires_at, used, created_at)
          VALUES ($1, $2, $3, $4, FALSE, NOW())`,
         [tokenId, normalizedEmail, resetCode, expiresAt]
       );
 
-      console.log(`[PASSWORD RESET] Code for ${normalizedEmail}: ${resetCode}`);
+      // Build direct reset URL
+      const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
+      const proto = req.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+      const origin = `${proto}://${host}`;
+      const resetUrl = `${origin}/?resetEmail=${encodeURIComponent(normalizedEmail)}&resetCode=${resetCode}`;
+
+      // Send real email via SMTP / Resend / Ethereal
+      const emailResult = await sendPasswordResetEmail({
+        to: normalizedEmail,
+        code: resetCode,
+        resetUrl,
+      });
+
+      console.log(`[PASSWORD RESET] Email dispatched for ${normalizedEmail} with code ${resetCode}`);
 
       return NextResponse.json({
         success: true,
-        message: `Código de verificação enviado para ${normalizedEmail}!`,
-        codePreview: resetCode,
+        message: `Código de verificação enviado para ${normalizedEmail}! Verifique sua caixa de entrada.`,
+        previewUrl: emailResult.previewUrl || null,
+        needsSmtpConfig: !!emailResult.needsSmtpConfig,
+        provider: emailResult.provider,
       });
     }
 
@@ -119,7 +135,7 @@ export async function POST(req: NextRequest) {
       // Mark token as used
       await db.query('UPDATE password_reset_tokens SET used = TRUE WHERE id = $1', [tokenRecord.id]);
 
-      // Update user password
+      // Update user password in database
       const newHash = await hashPassword(newPassword);
       await db.query(
         'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE email = $2',
