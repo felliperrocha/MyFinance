@@ -1,12 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import TransactionModal from '@/components/transactions/TransactionModal';
 import AuthModal from '@/components/auth/AuthModal';
 import { Category } from '@/lib/types';
 import { formatCurrency, formatDate } from '@/lib/formatters';
-import { PlusCircle, ArrowDownCircle, Trash2, Search, LogIn } from 'lucide-react';
+import {
+  PlusCircle,
+  ArrowDownCircle,
+  Trash2,
+  Search,
+  LogIn,
+  Filter,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+  Calendar,
+  Tag,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function TransactionsPage() {
@@ -27,13 +39,13 @@ export default function TransactionsPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!user) return;
     try {
       setLoadingData(true);
       const [txRes, catRes] = await Promise.all([
-        fetch('/api/transactions'),
-        fetch('/api/categories'),
+        fetch('/api/transactions', { cache: 'no-store' }),
+        fetch('/api/categories', { cache: 'no-store' }),
       ]);
       const txData = await txRes.json();
       const catData = await catRes.json();
@@ -44,7 +56,7 @@ export default function TransactionsPage() {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -52,13 +64,15 @@ export default function TransactionsPage() {
     } else {
       setTransactions([]);
     }
-  }, [user]);
+  }, [user, fetchTransactions]);
 
   const handleDelete = async (id: string, type: string) => {
     if (!confirm('Deseja realmente excluir esta movimentação?')) return;
     try {
       const res = await fetch(`/api/transactions?id=${id}&type=${type}`, { method: 'DELETE' });
       if (res.ok) {
+        // Optimistic local removal
+        setTransactions((prev) => prev.filter((t) => t.id !== id));
         fetchTransactions();
       }
     } catch (err) {
@@ -113,8 +127,8 @@ export default function TransactionsPage() {
         {authLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '40vh' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', color: 'var(--color-medium-gray)' }}>
-              <div style={{ width: '22px', height: '22px', border: '2px solid var(--color-border)', borderTopColor: 'var(--color-primary-black)', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-              <span style={{ fontSize: '0.8125rem' }}>Carregando...</span>
+              <div style={{ width: '24px', height: '24px', border: '2px solid var(--color-border)', borderTopColor: 'var(--color-primary-black)', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+              <span style={{ fontSize: '0.8125rem' }}>Carregando suas finanças...</span>
             </div>
           </div>
         ) : !user ? (
@@ -149,21 +163,30 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <>
+            {/* Header Title + Action Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary-black)' }}>
                   Movimentações Financeiras
                 </h1>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--color-medium-gray)', marginTop: '0.2rem' }}>
-                  Controle detalhado de todas as receitas e despesas registradas.
+                  Controle simplificado de todas as entradas e saídas de dinheiro.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => fetchTransactions()}
+                  className="mf-btn mf-btn-secondary mf-btn-sm"
+                  title="Atualizar lista"
+                >
+                  <RefreshCw size={14} className={loadingData ? 'spin' : ''} />
+                  <span>Atualizar</span>
+                </button>
                 <button
                   onClick={() => setIsIncomeModalOpen(true)}
                   className="mf-btn mf-btn-secondary"
-                  style={{ color: 'var(--color-positive-text)' }}
+                  style={{ color: 'var(--color-positive-text)', fontWeight: 600 }}
                 >
                   <PlusCircle size={16} />
                   <span>Nova Receita</span>
@@ -178,33 +201,53 @@ export default function TransactionsPage() {
               </div>
             </div>
 
-            {/* Summary Filter Bar */}
+            {/* Quick Balance Cards */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: '1rem',
               }}
             >
-              <div className="mf-card" style={{ padding: '1rem 1.25rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-medium-gray)', display: 'block' }}>Total de Receitas</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-positive-text)' }} className="tabular-nums">
+              <div className="mf-card" style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-medium-gray)', textTransform: 'uppercase' }}>
+                    Entradas Filtradas
+                  </span>
+                  <ArrowUpRight size={16} color="var(--color-positive-text)" />
+                </div>
+                <span style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--color-positive-text)' }} className="tabular-nums">
                   + {formatCurrency(totalIncomeFiltered)}
                 </span>
-              </div>
-
-              <div className="mf-card" style={{ padding: '1rem 1.25rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-medium-gray)', display: 'block' }}>Total de Despesas</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-primary-black)' }} className="tabular-nums">
-                  - {formatCurrency(totalExpenseFiltered)}
+                <span style={{ fontSize: '0.6875rem', color: 'var(--color-medium-gray)' }}>
+                  {filtered.filter((t) => t.transaction_type === 'income').length} lançamento(s)
                 </span>
               </div>
 
-              <div className="mf-card" style={{ padding: '1rem 1.25rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-medium-gray)', display: 'block' }}>Resultado Líquido</span>
+              <div className="mf-card" style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-medium-gray)', textTransform: 'uppercase' }}>
+                    Saídas Filtradas
+                  </span>
+                  <ArrowDownRight size={16} color="var(--color-danger-text)" />
+                </div>
+                <span style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--color-danger-text)' }} className="tabular-nums">
+                  - {formatCurrency(totalExpenseFiltered)}
+                </span>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--color-medium-gray)' }}>
+                  {filtered.filter((t) => t.transaction_type === 'expense').length} lançamento(s)
+                </span>
+              </div>
+
+              <div className="mf-card" style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-medium-gray)', textTransform: 'uppercase' }}>
+                    Saldo das Movimentações
+                  </span>
+                </div>
                 <span
                   style={{
-                    fontSize: '1.25rem',
+                    fontSize: '1.35rem',
                     fontWeight: 700,
                     color: netBalanceFiltered >= 0 ? 'var(--color-positive-text)' : 'var(--color-danger-text)',
                   }}
@@ -212,10 +255,13 @@ export default function TransactionsPage() {
                 >
                   {netBalanceFiltered >= 0 ? `+ ${formatCurrency(netBalanceFiltered)}` : `- ${formatCurrency(Math.abs(netBalanceFiltered))}`}
                 </span>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--color-medium-gray)' }}>
+                  {netBalanceFiltered >= 0 ? 'Fluxo superavitário' : 'Atenção: saídas superam receitas'}
+                </span>
               </div>
             </div>
 
-            {/* Filters Box */}
+            {/* Filters Bar */}
             <div
               className="mf-card"
               style={{
@@ -231,7 +277,7 @@ export default function TransactionsPage() {
                 <Search size={16} color="var(--color-medium-gray)" />
                 <input
                   type="text"
-                  placeholder="Buscar por descrição..."
+                  placeholder="Buscar por descrição ou categoria..."
                   className="mf-input"
                   style={{ padding: '0.45rem 0.75rem' }}
                   value={searchTerm}
@@ -246,9 +292,9 @@ export default function TransactionsPage() {
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as any)}
                 >
-                  <option value="all">Todos os tipos</option>
-                  <option value="income">Apenas Receitas</option>
-                  <option value="expense">Apenas Despesas</option>
+                  <option value="all">Todas as Movimentações</option>
+                  <option value="income">Apenas Receitas (+)</option>
+                  <option value="expense">Apenas Despesas (-)</option>
                 </select>
 
                 <select
@@ -272,8 +318,8 @@ export default function TransactionsPage() {
                   onChange={(e) => setRecurrenceFilter(e.target.value)}
                 >
                   <option value="all">Todas as recorrências</option>
-                  <option value="monthly">Mensal</option>
-                  <option value="one-time">Única</option>
+                  <option value="monthly">Mensal (Recorrente)</option>
+                  <option value="one-time">Única (Eventual)</option>
                   <option value="custom">Personalizada</option>
                 </select>
               </div>
@@ -289,7 +335,7 @@ export default function TransactionsPage() {
                       <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Descrição</th>
                       <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Categoria</th>
                       <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Recorrência</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Método / Tipo</th>
+                      <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Tipo / Pagamento</th>
                       <th style={{ padding: '0.75rem 1rem', fontWeight: 500, textAlign: 'right' }}>Valor</th>
                       <th style={{ padding: '0.75rem 1rem', fontWeight: 500, textAlign: 'center' }}>Ações</th>
                     </tr>
@@ -297,8 +343,12 @@ export default function TransactionsPage() {
                   <tbody>
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--color-medium-gray)' }}>
-                          Nenhuma movimentação encontrada. Cadastre sua primeira receita ou despesa no botão acima.
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--color-medium-gray)' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                            <Tag size={24} color="var(--color-medium-gray)" />
+                            <strong>Nenhuma movimentação encontrada</strong>
+                            <span style={{ fontSize: '0.75rem' }}>Clique em &quot;Nova Receita&quot; ou &quot;Nova Despesa&quot; acima para registrar.</span>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -323,14 +373,28 @@ export default function TransactionsPage() {
                               {t.recurrence === 'monthly' ? 'Mensal' : t.recurrence === 'one-time' ? 'Única' : 'Personalizada'}
                             </td>
                             <td style={{ padding: '0.85rem 1rem', color: 'var(--color-medium-gray)' }}>
-                              {t.payment_method || t.income_type || '-'}
+                              {t.payment_method === 'credit'
+                                ? 'Cartão de Crédito'
+                                : t.payment_method === 'debit'
+                                ? 'Cartão de Débito'
+                                : t.payment_method === 'transfer'
+                                ? 'PIX / Transf.'
+                                : t.payment_method === 'cash'
+                                ? 'Dinheiro'
+                                : t.income_type === 'salary'
+                                ? 'Salário'
+                                : t.income_type === 'extra'
+                                ? 'Renda Extra'
+                                : t.income_type === 'benefit'
+                                ? 'Rendimento'
+                                : t.payment_method || t.income_type || '-'}
                             </td>
                             <td
                               style={{
                                 padding: '0.85rem 1rem',
                                 fontWeight: 700,
                                 textAlign: 'right',
-                                color: isIncome ? 'var(--color-positive-text)' : 'var(--color-primary-black)',
+                                color: isIncome ? 'var(--color-positive-text)' : 'var(--color-danger-text)',
                               }}
                               className="tabular-nums"
                             >

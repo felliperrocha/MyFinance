@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import MoneyInput from '@/components/ui/MoneyInput';
 import { Goal, StrategyType } from '@/lib/types';
+import { RefreshCw } from 'lucide-react';
 
 interface StrategyModalProps {
   isOpen: boolean;
@@ -21,12 +23,17 @@ export default function StrategyModal({
   const [description, setDescription] = useState('');
   const [strategyType, setStrategyType] = useState<StrategyType>('savings');
   const [goalId, setGoalId] = useState(goals[0]?.id || '');
-  const [monthlyImpact, setMonthlyImpact] = useState('');
+  const [monthlyImpact, setMonthlyImpact] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
+    setError(null);
+    if (!title.trim()) {
+      setError('Por favor, defina um título para a estratégia.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -34,23 +41,27 @@ export default function StrategyModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
-          description,
+          title: title.trim(),
+          description: description.trim(),
           strategy_type: strategyType,
           goal_id: goalId || null,
-          estimated_monthly_impact: parseFloat(monthlyImpact) || 0,
+          estimated_monthly_impact: monthlyImpact || 0,
         }),
       });
 
       if (res.ok) {
         setTitle('');
         setDescription('');
-        setMonthlyImpact('');
+        setMonthlyImpact(0);
         onSuccess();
         onClose();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Erro ao salvar estratégia.');
       }
     } catch (err) {
       console.error('Error saving strategy:', err);
+      setError('Falha de conexão com o servidor.');
     } finally {
       setLoading(false);
     }
@@ -62,14 +73,30 @@ export default function StrategyModal({
       onClose={onClose}
       title="Nova Estratégia Financeira"
       subtitle="Crie planos práticos para acelerar suas metas e otimizar seu patrimônio."
+      maxWidth="540px"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {error && (
+          <div
+            style={{
+              backgroundColor: 'var(--color-danger-bg)',
+              color: 'var(--color-danger-text)',
+              border: '1px solid var(--color-danger-border)',
+              padding: '0.6rem 0.85rem',
+              borderRadius: '6px',
+              fontSize: '0.8125rem',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         <div>
           <label className="mf-label">Título da Estratégia</label>
           <input
             type="text"
             className="mf-input"
-            placeholder="Ex: Reduzir assinaturas de streaming, Aporte automático..."
+            placeholder="Ex: Cancelar streamings sem uso, Marmita no trabalho, Investir em Tesouro..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
@@ -86,8 +113,8 @@ export default function StrategyModal({
               onChange={(e) => setStrategyType(e.target.value as StrategyType)}
             >
               <option value="savings">Economia (Redução de Gastos)</option>
-              <option value="organization">Organização (Planejamento & Hábitos)</option>
-              <option value="investment">Investimento (Alocação & Rendimento)</option>
+              <option value="organization">Organização & Hábitos</option>
+              <option value="investment">Investimentos & Rendimentos</option>
             </select>
           </div>
 
@@ -109,20 +136,16 @@ export default function StrategyModal({
         </div>
 
         <div>
-          <label className="mf-label">Impacto Mensal Estimado (R$/mês)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            className="mf-input tabular-nums"
-            placeholder="Ex: 250,00"
+          <label className="mf-label">Impacto Mensal Estimado</label>
+          <MoneyInput
             value={monthlyImpact}
-            onChange={(e) => setMonthlyImpact(e.target.value)}
+            onChangeValue={setMonthlyImpact}
+            placeholder="0,00"
           />
         </div>
 
         <div>
-          <label className="mf-label">Descrição & Plano de Ação</label>
+          <label className="mf-label">Descrição & Plano de Ação (Opcional)</label>
           <textarea
             className="mf-textarea"
             rows={3}
@@ -136,8 +159,15 @@ export default function StrategyModal({
           <button type="button" onClick={onClose} className="mf-btn mf-btn-secondary">
             Cancelar
           </button>
-          <button type="submit" disabled={loading} className="mf-btn mf-btn-primary">
-            {loading ? 'Salvando...' : 'Criar Estratégia'}
+          <button type="submit" disabled={loading} className="mf-btn mf-btn-primary" style={{ minWidth: '130px' }}>
+            {loading ? (
+              <>
+                <RefreshCw size={14} className="spin" />
+                <span>Salvando...</span>
+              </>
+            ) : (
+              'Criar Estratégia'
+            )}
           </button>
         </div>
       </form>

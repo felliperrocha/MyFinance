@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import MoneyInput from '@/components/ui/MoneyInput';
+import CategoryGridSelector from '@/components/ui/CategoryGridSelector';
 import { Category } from '@/lib/types';
+import { RefreshCw } from 'lucide-react';
 
 interface BudgetModalProps {
   isOpen: boolean;
@@ -18,12 +21,22 @@ export default function BudgetModal({
   onSuccess,
 }: BudgetModalProps) {
   const [categoryId, setCategoryId] = useState(categories[0]?.id || 'cat-1');
-  const [monthlyLimit, setMonthlyLimit] = useState('');
+  const [monthlyLimit, setMonthlyLimit] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoryId || !monthlyLimit) return;
+    setError(null);
+
+    if (!categoryId) {
+      setError('Por favor, selecione uma categoria.');
+      return;
+    }
+    if (!monthlyLimit || monthlyLimit <= 0) {
+      setError('Por favor, defina um teto de gastos válido maior que zero.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -32,19 +45,23 @@ export default function BudgetModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category_id: categoryId,
-          monthly_limit: parseFloat(monthlyLimit),
+          monthly_limit: monthlyLimit,
           month: 8,
           year: 2026,
         }),
       });
 
       if (res.ok) {
-        setMonthlyLimit('');
+        setMonthlyLimit(0);
         onSuccess();
         onClose();
+      } else {
+        const err = await res.json();
+        setError(err.error || 'Erro ao salvar orçamento.');
       }
     } catch (err) {
       console.error('Error saving budget:', err);
+      setError('Falha de conexão com o servidor.');
     } finally {
       setLoading(false);
     }
@@ -54,46 +71,66 @@ export default function BudgetModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Definir Orçamento Mensal"
-      subtitle="Estabeleça o teto de gastos para monitoramento e alertas."
+      title="Definir Teto de Orçamento"
+      subtitle="Estabeleça limites por categoria para receber alertas visuais de consumo."
+      maxWidth="520px"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-        <div>
-          <label className="mf-label">Categoria de Despesa</label>
-          <select
-            className="mf-select"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {error && (
+          <div
+            style={{
+              backgroundColor: 'var(--color-danger-bg)',
+              color: 'var(--color-danger-text)',
+              border: '1px solid var(--color-danger-border)',
+              padding: '0.6rem 0.85rem',
+              borderRadius: '6px',
+              fontSize: '0.8125rem',
+            }}
           >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            {error}
+          </div>
+        )}
+
+        {/* Category Grid Picker */}
+        <div>
+          <label className="mf-label" style={{ marginBottom: '0.5rem' }}>
+            Selecione a Categoria de Despesa
+          </label>
+          <CategoryGridSelector
+            categories={categories}
+            selectedId={categoryId}
+            onSelect={setCategoryId}
+          />
         </div>
 
+        {/* Limit Money Input */}
         <div>
-          <label className="mf-label">Limite Mensal de Gastos (R$)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="1"
-            className="mf-input tabular-nums"
-            placeholder="Ex: 1200,00"
+          <label className="mf-label">Limite Mensal Desejado</label>
+          <MoneyInput
             value={monthlyLimit}
-            onChange={(e) => setMonthlyLimit(e.target.value)}
+            onChangeValue={setMonthlyLimit}
+            placeholder="0,00"
             required
             autoFocus
           />
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-medium-gray)', display: 'block', marginTop: '0.35rem' }}>
+            O sistema alertará quando você atingir 50%, 80% e 100% deste valor.
+          </span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
           <button type="button" onClick={onClose} className="mf-btn mf-btn-secondary">
             Cancelar
           </button>
-          <button type="submit" disabled={loading} className="mf-btn mf-btn-primary">
-            {loading ? 'Salvando...' : 'Definir Limite'}
+          <button type="submit" disabled={loading} className="mf-btn mf-btn-primary" style={{ minWidth: '130px' }}>
+            {loading ? (
+              <>
+                <RefreshCw size={14} className="spin" />
+                <span>Salvando...</span>
+              </>
+            ) : (
+              'Definir Limite'
+            )}
           </button>
         </div>
       </form>

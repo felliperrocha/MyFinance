@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
+import MoneyInput from '@/components/ui/MoneyInput';
+import DatePickerInput from '@/components/ui/DatePickerInput';
 import { GoalPriority } from '@/lib/types';
+import { RefreshCw, Target, ShieldCheck, Clock } from 'lucide-react';
 
 interface GoalModalProps {
   isOpen: boolean;
@@ -12,15 +15,25 @@ interface GoalModalProps {
 
 export default function GoalModal({ isOpen, onClose, onSuccess }: GoalModalProps) {
   const [title, setTitle] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [currentAmount, setCurrentAmount] = useState('');
+  const [targetAmount, setTargetAmount] = useState<number>(0);
+  const [currentAmount, setCurrentAmount] = useState<number>(0);
   const [deadline, setDeadline] = useState('2027-12-31');
   const [priority, setPriority] = useState<GoalPriority>('medium');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !targetAmount) return;
+    setError(null);
+
+    if (!title.trim()) {
+      setError('Por favor, informe o nome do seu objetivo financeiro.');
+      return;
+    }
+    if (!targetAmount || targetAmount <= 0) {
+      setError('O valor alvo da meta precisa ser maior que zero.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -28,9 +41,9 @@ export default function GoalModal({ isOpen, onClose, onSuccess }: GoalModalProps
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
-          target_amount: parseFloat(targetAmount),
-          current_amount: parseFloat(currentAmount) || 0,
+          title: title.trim(),
+          target_amount: targetAmount,
+          current_amount: currentAmount || 0,
           deadline,
           priority,
         }),
@@ -38,88 +51,131 @@ export default function GoalModal({ isOpen, onClose, onSuccess }: GoalModalProps
 
       if (res.ok) {
         setTitle('');
-        setTargetAmount('');
-        setCurrentAmount('');
+        setTargetAmount(0);
+        setCurrentAmount(0);
         onSuccess();
         onClose();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Erro ao criar meta.');
       }
     } catch (err) {
       console.error('Error creating goal:', err);
+      setError('Falha de conexão com o servidor.');
     } finally {
       setLoading(false);
     }
   };
 
+  const priorityOptions: { id: GoalPriority; label: string; desc: string }[] = [
+    { id: 'high', label: 'Alta Prioridade', desc: 'Essencial (Ex: Reserva, Dívidas)' },
+    { id: 'medium', label: 'Média Prioridade', desc: 'Importante (Ex: Viagem, Carro)' },
+    { id: 'low', label: 'Baixa Prioridade', desc: 'Desejo futuro de longo prazo' },
+  ];
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nova Meta Financeira"
-      subtitle="Defina seus objetivos, prazos e prioridades de conquista."
+      title="Criar Nova Meta Financeira"
+      subtitle="Defina o objetivo, valor e prazo para calcularmos suas projeções."
+      maxWidth="540px"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {error && (
+          <div
+            style={{
+              backgroundColor: 'var(--color-danger-bg)',
+              color: 'var(--color-danger-text)',
+              border: '1px solid var(--color-danger-border)',
+              padding: '0.6rem 0.85rem',
+              borderRadius: '6px',
+              fontSize: '0.8125rem',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         <div>
-          <label className="mf-label">Título da Meta</label>
+          <label className="mf-label">Nome da Meta</label>
           <input
             type="text"
             className="mf-input"
-            placeholder="Ex: Reserva de Emergência, Imóvel Próprio, Viagem..."
+            placeholder="Ex: Reserva de Emergência 6 Meses, Imóvel Próprio, Viagem Europa..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            required
+            autoFocus
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+          <div>
+            <label className="mf-label">Valor Alvo (Objetivo)</label>
+            <MoneyInput
+              value={targetAmount}
+              onChangeValue={setTargetAmount}
+              placeholder="0,00"
+              required
+            />
+          </div>
+          <div>
+            <label className="mf-label">Já Acumulado (Inicial)</label>
+            <MoneyInput
+              value={currentAmount}
+              onChangeValue={setCurrentAmount}
+              placeholder="0,00"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mf-label">Data Estimada para Conclusão</label>
+          <DatePickerInput
+            value={deadline}
+            onChange={setDeadline}
             required
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <div>
-            <label className="mf-label">Valor Alvo (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="1"
-              className="mf-input tabular-nums"
-              placeholder="Ex: 20000,00"
-              value={targetAmount}
-              onChange={(e) => setTargetAmount(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mf-label">Valor Inicial Já Acumulado (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              className="mf-input tabular-nums"
-              placeholder="0,00"
-              value={currentAmount}
-              onChange={(e) => setCurrentAmount(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <div>
-            <label className="mf-label">Data Limite (Prazo)</label>
-            <input
-              type="date"
-              className="mf-input"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mf-label">Prioridade</label>
-            <select
-              className="mf-select"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as GoalPriority)}
-            >
-              <option value="high">Alta Prioridade</option>
-              <option value="medium">Média Prioridade</option>
-              <option value="low">Baixa Prioridade</option>
-            </select>
+        {/* Priority visual selector */}
+        <div>
+          <label className="mf-label" style={{ marginBottom: '0.4rem' }}>
+            Nível de Prioridade
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+            {priorityOptions.map((opt) => {
+              const isSelected = priority === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setPriority(opt.id)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.65rem 0.5rem',
+                    borderRadius: '8px',
+                    border: isSelected
+                      ? '2px solid var(--color-primary-black)'
+                      : '1px solid var(--color-border)',
+                    backgroundColor: isSelected
+                      ? 'var(--color-surface-hover)'
+                      : 'var(--color-surface-card)',
+                    color: isSelected ? 'var(--color-primary-black)' : 'var(--color-medium-gray)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: isSelected ? 600 : 500,
+                  }}
+                >
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -127,8 +183,15 @@ export default function GoalModal({ isOpen, onClose, onSuccess }: GoalModalProps
           <button type="button" onClick={onClose} className="mf-btn mf-btn-secondary">
             Cancelar
           </button>
-          <button type="submit" disabled={loading} className="mf-btn mf-btn-primary">
-            {loading ? 'Criando...' : 'Criar Meta'}
+          <button type="submit" disabled={loading} className="mf-btn mf-btn-primary" style={{ minWidth: '130px' }}>
+            {loading ? (
+              <>
+                <RefreshCw size={14} className="spin" />
+                <span>Criando...</span>
+              </>
+            ) : (
+              'Criar Meta'
+            )}
           </button>
         </div>
       </form>

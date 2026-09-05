@@ -322,6 +322,10 @@ p, span, label {
   }
 }
 
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
 /* Scrollbar Minimalist */
 ::-webkit-scrollbar {
   width: 6px;
