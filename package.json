@@ -8,7 +8,7 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "db:init": "node scripts/init-neon.js",
-    "push": "C:\\Users\\pedro\\AppData\\Local\\Programs\\MinGit\\cmd\\git.exe push -u origin main"
+    "push": "git add . && git commit -m \"chore: auto-sync updates\" && git push origin main"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.5",

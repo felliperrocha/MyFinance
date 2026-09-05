@@ -1,13 +1,13 @@
-$env:PATH = "C:\Users\pedro\AppData\Local\Programs\nodejs;C:\Users\pedro\AppData\Local\Programs\MinGit\cmd;C:\Users\pedro\AppData\Local\Programs\MinGit\bin;" + $env:PATH
-
-Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "   MyFinance — Enviando para o GitHub (main)     " -ForegroundColor Cyan
-Write-Host "==================================================" -ForegroundColor Cyan
-
-$gitExe = "C:\Users\pedro\AppData\Local\Programs\MinGit\cmd\git.exe"
-
-if (Test-Path $gitExe) {
-    & $gitExe push -u origin main --force
-} else {
-    Write-Error "Git não foi localizado em $gitExe"
+$gitExe = (Get-Command git).Source
+if (-not $gitExe) {
+    $gitExe = "git"
 }
+
+Write-Host "Realizando commit e push automático..." -ForegroundColor Cyan
+& $gitExe add .
+$status = & $gitExe status --porcelain
+if ($status) {
+    & $gitExe commit -m "chore: auto-sync updates"
+}
+& $gitExe push origin main
+Write-Host "Concluído com sucesso!" -ForegroundColor Green
