@@ -1,8 +1,11 @@
-const { Pool } = require('pg');
+const { Pool, neonConfig } = require('@neondatabase/serverless');
+const ws = require('ws');
 const fs = require('fs');
 const path = require('path');
 
-// Read .env.local if exists
+neonConfig.webSocketConstructor = ws;
+
+// Read .env.local
 const envPath = path.resolve(__dirname, '../.env.local');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
@@ -25,11 +28,10 @@ if (!databaseUrl || databaseUrl.includes('sample-123456')) {
   process.exit(0);
 }
 
-console.log('🔄 Conectando ao Neon PostgreSQL e aplicando índices de performance...');
+console.log('🔄 Conectando ao Neon PostgreSQL Serverless e aplicando tabelas...');
 
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: { rejectUnauthorized: false },
 });
 
 const schemaSql = `
@@ -150,9 +152,9 @@ const schemaSql = `
 async function main() {
   try {
     await pool.query(schemaSql);
-    console.log('\x1b[32m%s\x1b[0m', '✓ Sucesso! Todas as tabelas e índices de alta performance foram aplicados no Neon!');
+    console.log('\x1b[32m%s\x1b[0m', '✓ Sucesso! Todas as tabelas e índices foram criados com sucesso no Neon PostgreSQL!');
   } catch (err) {
-    console.error('Erro:', err.message);
+    console.error('Erro na migração:', err.message);
   } finally {
     await pool.end();
   }

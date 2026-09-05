@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
 import { DEFAULT_CATEGORIES } from './seed';
 import {
   User,
@@ -12,12 +13,17 @@ import {
   Insight,
 } from './types';
 
-// Global singleton pool for connection reuse
-declare global {
-  var _neonPool: Pool | undefined;
+// Support node environment for websockets if needed
+if (typeof window === 'undefined') {
+  neonConfig.webSocketConstructor = ws;
 }
 
-export function getDatabasePool(): Pool | null {
+// Global singleton pool for connection reuse
+declare global {
+  var _neonPool: any | undefined;
+}
+
+export function getDatabasePool(): any | null {
   const databaseUrl =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
@@ -31,12 +37,6 @@ export function getDatabasePool(): Pool | null {
   if (!global._neonPool) {
     global._neonPool = new Pool({
       connectionString: databaseUrl,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
     });
   }
 

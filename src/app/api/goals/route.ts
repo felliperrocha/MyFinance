@@ -27,14 +27,14 @@ export async function GET(req: NextRequest) {
         ORDER BY gc.contribution_date DESC
       `, [userId]);
 
-      goals = gRes.rows.map((g) => ({
+      goals = gRes.rows.map((g: any) => ({
         ...g,
-        contributions: cRes.rows.filter((c) => c.goal_id === g.id),
+        contributions: cRes.rows.filter((c: any) => c.goal_id === g.id),
       }));
     } else {
-      goals = goals.map((g) => ({
+      goals = goals.map((g: any) => ({
         ...g,
-        contributions: contributions.filter((c) => c.goal_id === g.id),
+        contributions: contributions.filter((c: any) => c.goal_id === g.id),
       }));
     }
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getDatabasePool, initPostgresSchema } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const pool = getDatabasePool();
@@ -25,7 +27,7 @@ export async function GET() {
       success: true,
       connected: true,
       message: 'Todas as 8 tabelas do MyFinance foram criadas/verificadas com sucesso no Neon PostgreSQL!',
-      tables: tablesRes.rows.map((r) => r.table_name),
+      tables: tablesRes.rows.map((r: any) => r.table_name),
     });
   } catch (error: any) {
     console.error('Error during database setup:', error);
