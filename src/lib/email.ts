@@ -135,6 +135,9 @@ Se você não solicitou esta alteração, ignore este e-mail.
     const data = await res.json();
     if (!res.ok) {
       console.error('[EMAIL RESEND ERROR]', data);
+      if (data?.message?.includes('testing emails to your own email address')) {
+        throw new Error('No modo de teste inicial do Resend, envie para o e-mail cadastrado na sua conta. Para liberar para qualquer destinatário público, conecte um domínio em resend.com/domains.');
+      }
       throw new Error(data?.message || 'Falha ao disparar e-mail via Resend.');
     }
 
