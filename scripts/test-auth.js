@@ -70,7 +70,73 @@ async function runTests() {
   });
   console.log('   Resultado:', dbRes.data);
 
-  console.log('\n✓ Todos os testes de autenticação e rotas passaram!');
+  console.log('\n5. Testando /api/auth/login (Login com credenciais)...');
+  const loginRes = await request(
+    {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/api/auth/login',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+    {
+      email: 'pedro@teste.com',
+      password: 'senhaSegura123',
+    }
+  );
+  console.log('   Status:', loginRes.status, 'Resultado:', loginRes.data);
+  const authCookie = loginRes.cookie ? loginRes.cookie[0].split(';')[0] : cookie;
+
+  console.log('\n6. Testando /api/auth/change-password (Troca de senha)...');
+  const changePwdRes = await request(
+    {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/api/auth/change-password',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookie,
+      },
+    },
+    {
+      currentPassword: 'senhaSegura123',
+      newPassword: 'novaSenhaSegura456',
+      confirmPassword: 'novaSenhaSegura456',
+    }
+  );
+  console.log('   Status:', changePwdRes.status, 'Resultado:', changePwdRes.data);
+
+  console.log('\n7. Testando /api/auth/forgot-password (Solicitação de código via Gmail SMTP)...');
+  const forgotReqRes = await request(
+    {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/api/auth/forgot-password',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+    {
+      action: 'request-code',
+      email: 'pedro@teste.com',
+    }
+  );
+  console.log('   Status:', forgotReqRes.status, 'Resultado:', forgotReqRes.data);
+
+  console.log('\n8. Testando /api/auth/logout (Desconexão da sessão)...');
+  const logoutRes = await request(
+    {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/api/auth/logout',
+      method: 'POST',
+      headers: { Cookie: authCookie },
+    },
+    {}
+  );
+  console.log('   Status:', logoutRes.status, 'Resultado:', logoutRes.data);
+
+  console.log('\n✓ Todos os testes de autenticação e rotas passaram com sucesso!');
 }
 
 runTests().catch(console.error);

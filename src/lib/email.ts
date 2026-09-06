@@ -94,40 +94,89 @@ Se você não solicitou esta alteração, ignore este e-mail.
     const cleanPass = smtpPass.replace(/\s+/g, '');
     const cleanFrom = isGmail ? `"MyFinance" <${smtpUser}>` : fromAddress;
 
-    const transporter = isGmail
-      ? nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: smtpUser,
-            pass: cleanPass,
-          },
-        })
-      : nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: {
-            user: smtpUser,
-            pass: cleanPass,
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-        });
+    try {
+      const transporter = isGmail
+        ? nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: smtpUser,
+              pass: cleanPass,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+          })
+        : nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: {
+              user: smtpUser,
+              pass: cleanPass,
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+          });
 
-    const info = await transporter.sendMail({
-      from: cleanFrom,
-      to,
-      subject: `Seu código de segurança MyFinance: ${code}`,
-      text: textContent,
-      html: htmlContent,
-    });
+      const info = await transporter.sendMail({
+        from: cleanFrom,
+        to,
+        subject: `Seu código de segurança MyFinance: ${code}`,
+        text: textContent,
+        html: htmlContent,
+      });
 
-    console.log(`[EMAIL] Successfully sent real email to ${to}. MessageId: ${info.messageId}`);
-    return { success: true, messageId: info.messageId, provider: 'smtp' };
+      console.log(`[EMAIL] Successfully sent real email to ${to}. MessageId: ${info.messageId}`);
+      return { success: true, messageId: info.messageId, provider: 'smtp' };
+    } catch (smtpErr: any) {
+      console.error('[EMAIL ERROR] Falha no envio via SMTP real:', smtpErr.message);
+      // If service: 'gmail' failed, try explicit host on port 587 with STARTTLS
+      if (isGmail) {
+        try {
+          console.log('[EMAIL] Tentando fallback para smtp.gmail.com na porta 587 (TLS)...');
+          const fallbackTransporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+              user: smtpUser,
+              pass: cleanPass,
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+          });
+
+          const info = await fallbackTransporter.sendMail({
+            from: cleanFrom,
+            to,
+            subject: `Seu código de segurança MyFinance: ${code}`,
+            text: textContent,
+            html: htmlContent,
+          });
+
+          console.log(`[EMAIL] Fallback 587 bem-sucedido para ${to}. MessageId: ${info.messageId}`);
+          return { success: true, messageId: info.messageId, provider: 'smtp-fallback-587' };
+        } catch (fbErr: any) {
+          console.error('[EMAIL ERROR] Fallback 587 também falhou:', fbErr.message);
+          throw new Error(`Falha ao autenticar no Gmail SMTP: ${smtpErr.message || fbErr.message}. Verifique se a "Senha de App" de 16 dígitos está correta e com Verificação em 2 Etapas ativada.`);
+        }
+      }
+      throw smtpErr;
+    }
   }
 
   // 2. Fallback: Ethereal test inbox or development logger (when SMTP is not configured yet)
+  console.warn('[EMAIL WARNING] SMTP_USER ou SMTP_PASS não estão configurados no .env.local! O envio real para o Gmail está desativado.');
+  console.log(`[EMAIL DEV CODE] Para o e-mail ${to}, o código gerado foi: ${code}`);
+
   try {
     const testAccount = await nodemailer.createTestAccount();
     const testTransporter = nodemailer.createTransport({
@@ -156,10 +205,11 @@ Se você não solicitou esta alteração, ignore este e-mail.
       provider: 'ethereal',
       previewUrl,
       needsSmtpConfig: true,
+      devCode: code,
     };
   } catch (fallbackErr) {
     console.warn('[EMAIL] Fallback error, logging code to console:', fallbackErr);
     console.log(`[EMAIL BACKUP] To: ${to} | Code: ${code} | ResetURL: ${resetUrl}`);
-    return { success: true, provider: 'console', needsSmtpConfig: true };
+    return { success: true, provider: 'console', needsSmtpConfig: true, devCode: code };
   }
 }

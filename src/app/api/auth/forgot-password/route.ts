@@ -83,10 +83,13 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Código de verificação enviado para ${normalizedEmail}! Verifique sua caixa de entrada.`,
+        message: emailResult.needsSmtpConfig
+          ? `[Atenção] SMTP do Gmail não configurado no .env.local. Código gerado no servidor: ${resetCode}`
+          : `Código de verificação enviado para ${normalizedEmail}! Verifique sua caixa de entrada.`,
         previewUrl: emailResult.previewUrl || null,
         needsSmtpConfig: !!emailResult.needsSmtpConfig,
         provider: emailResult.provider,
+        devCode: emailResult.needsSmtpConfig ? resetCode : undefined,
       });
     }
 
