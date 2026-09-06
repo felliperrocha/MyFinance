@@ -84,12 +84,9 @@ export default function AuthModal({
           return;
         }
 
-        // If in dev mode without SMTP, auto-populate code so user is not blocked
-        setCode(data.devCode || '');
+        // Code input remains empty so user must check their real email
+        setCode('');
         setSuccessMessage(data.message || 'Código de verificação enviado! Verifique seu e-mail.');
-        if (data.previewUrl) {
-          setEmailPreviewUrl(data.previewUrl);
-        }
         if (data.needsSmtpConfig) {
           setNeedsSmtpConfig(true);
         }

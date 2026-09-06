@@ -205,11 +205,10 @@ Se você não solicitou esta alteração, ignore este e-mail.
       provider: 'ethereal',
       previewUrl,
       needsSmtpConfig: true,
-      devCode: code,
     };
   } catch (fallbackErr) {
     console.warn('[EMAIL] Fallback error, logging code to console:', fallbackErr);
     console.log(`[EMAIL BACKUP] To: ${to} | Code: ${code} | ResetURL: ${resetUrl}`);
-    return { success: true, provider: 'console', needsSmtpConfig: true, devCode: code };
+    return { success: true, provider: 'console', needsSmtpConfig: true };
   }
 }
