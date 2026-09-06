@@ -38,11 +38,15 @@ export async function GET(req: NextRequest) {
     const unifiedList = [
       ...incomes.map((inc) => ({
         ...inc,
+        amount: parseFloat(String(inc.amount)) || 0,
+        date: inc.date ? (typeof inc.date === 'string' ? inc.date.split('T')[0] : new Date(inc.date).toISOString().split('T')[0]) : '',
         transaction_type: 'income' as const,
         category_name: 'Receita',
       })),
       ...expenses.map((exp) => ({
         ...exp,
+        amount: parseFloat(String(exp.amount)) || 0,
+        date: exp.date ? (typeof exp.date === 'string' ? exp.date.split('T')[0] : new Date(exp.date).toISOString().split('T')[0]) : '',
         transaction_type: 'expense' as const,
       })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
