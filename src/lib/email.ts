@@ -92,7 +92,7 @@ Se você não solicitou esta alteração, ignore este e-mail.
   if (smtpUser && smtpPass) {
     const isGmail = smtpHost.includes('gmail');
     const cleanPass = smtpPass.replace(/\s+/g, '');
-    const cleanFrom = isGmail ? `"MyFinance" <${smtpUser}>` : fromAddress;
+    const cleanFrom = process.env.EMAIL_FROM || (isGmail ? `"MyFinance" <${smtpUser}>` : fromAddress);
 
     try {
       const transporter = isGmail
