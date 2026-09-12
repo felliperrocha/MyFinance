@@ -1,0 +1,209 @@
+/* FinancialStory Component Styling */
+
+.financial-story-container {
+  position: relative;
+  width: 100%;
+  background-color: #07090E;
+  color: #FFFFFF;
+}
+
+.financial-story-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 2rem;
+}
+
+/* Scroll Progress Bar at top */
+.story-scroll-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #10B981 0%, #6366F1 50%, #38BDF8 100%);
+  z-index: 50;
+}
+
+/* Story Grid Layout */
+.story-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 3rem;
+  width: 100%;
+  max-width: 1380px;
+  align-items: center;
+  z-index: 10;
+}
+
+@media (max-width: 1024px) {
+  .story-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+}
+
+/* Story Text Panel */
+.story-text-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 460px;
+}
+
+.story-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #10B981;
+  text-transform: uppercase;
+}
+
+.story-title {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  color: #FFFFFF;
+}
+
+.story-description {
+  font-size: 1.05rem;
+  color: #94A3B8;
+  line-height: 1.6;
+}
+
+/* Animated Big Metric Display */
+.story-metric-box {
+  margin-top: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: fit-content;
+}
+
+.story-metric-value {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.04em;
+  font-family: var(--font-jakarta), var(--font-inter);
+}
+
+.story-metric-label {
+  font-size: 0.78125rem;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Floating Data Labels */
+.story-floating-label {
+  position: absolute;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-size: 0.78125rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Parallax Feature Section */
+.feature-parallax-section {
+  padding: 8rem 2.5rem 6rem;
+  max-width: 1380px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.feature-editorial-header {
+  margin-bottom: 4.5rem;
+}
+
+.feature-editorial-eyebrow {
+  font-size: 0.78125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #10B981;
+  text-transform: uppercase;
+}
+
+.feature-editorial-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  color: #FFFFFF;
+  margin-top: 0.5rem;
+}
+
+.feature-editorial-title span {
+  opacity: 0.4;
+}
+
+/* Parallax Cards Grid */
+.parallax-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 2.25rem;
+}
+
+.parallax-card-item {
+  background: rgba(15, 20, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.25rem;
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 220px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+.parallax-card-item:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.parallax-card-number {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #10B981;
+  letter-spacing: 0.06em;
+}
+
+.parallax-card-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 0.35rem;
+}
+
+.parallax-card-description {
+  font-size: 0.875rem;
+  color: #94A3B8;
+  line-height: 1.6;
+}

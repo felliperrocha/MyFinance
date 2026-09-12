@@ -39,6 +39,8 @@ export default function Sidebar() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
+  if (!user) return null;
+
   const initials = user?.name
     ? user.name
         .split(' ')

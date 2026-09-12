@@ -11,6 +11,8 @@ import {
   Lightbulb,
 } from 'lucide-react';
 
+import { useAuth } from '@/context/AuthContext';
+
 const mobileNavItems = [
   { label: 'Início', href: '/', icon: LayoutDashboard },
   { label: 'Movimentos', href: '/transactions', icon: ArrowLeftRight },
@@ -21,6 +23,9 @@ const mobileNavItems = [
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  if (!user) return null;
 
   return (
     <nav

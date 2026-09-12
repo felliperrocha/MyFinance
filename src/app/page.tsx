@@ -120,7 +120,7 @@ export default function HomePage() {
   const featuredInsight = insights.length > 0 ? insights[0] : null;
 
   return (
-    <>
+    <div style={{ backgroundColor: !user ? '#07090E' : 'transparent', minHeight: '100vh' }}>
       <Header
         user={user}
         onOpenLogin={handleOpenLogin}
@@ -128,8 +128,8 @@ export default function HomePage() {
         onLogout={handleLogout}
       />
 
-      <main className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-        {/* If user is NOT logged in: show Landing View with Login/Register triggers */}
+      <main className={user ? 'page-body' : ''} style={user ? { display: 'flex', flexDirection: 'column', gap: '1.75rem' } : { width: '100%' }}>
+        {/* If user is NOT logged in: show Landing View matching reference image */}
         {!user ? (
           <LandingView
             onOpenLogin={handleOpenLogin}
@@ -326,6 +326,6 @@ export default function HomePage() {
         goal={selectedGoal}
         onOpenContribution={() => setIsContributionModalOpen(true)}
       />
-    </>
+    </div>
   );
 }
