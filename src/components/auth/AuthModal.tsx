@@ -204,7 +204,7 @@ export default function AuthModal({
   };
 
   const googleBtnRef = useRef<HTMLDivElement>(null);
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_NOVO;
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_NOVO || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handleGoogleCredentialResponse = async (response: any) => {
     if (!response?.credential) return;
