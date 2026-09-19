@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Wallet, TrendingUp, Sparkles, ChevronDown, CheckCircle2 } from 'lucide-react';
 import FinancialStory from '../FinancialStory/FinancialStory';
+import VideoScrollStory from './VideoScrollStory';
 
 interface LandingViewProps {
   onOpenLogin: () => void;
@@ -19,7 +20,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
   };
 
   return (
-    <div className="public-landing-container" style={{ width: '100%', overflowX: 'hidden' }}>
+    <div className="public-landing-container" style={{ width: '100%', overflowX: 'clip' }}>
       
       {/* ─────────────────────────────────────────────────────────────
           HERO SECTION — HIGH END FINTECH COCKPIT
@@ -258,6 +259,11 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
           <ChevronDown size={18} color="#94A3B8" />
         </div>
       </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INTERACTIVE VIDEO SCROLL SECTION (300vh sticky 60fps scrollytelling)
+          ───────────────────────────────────────────────────────────── */}
+      <VideoScrollStory />
 
       {/* ─────────────────────────────────────────────────────────────
           FINANCIAL STORY SCROLL EXPERIENCE
