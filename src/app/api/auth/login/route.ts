@@ -16,11 +16,12 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = typeof password === 'string' ? password.trim() : password;
     const pool = getDatabasePool();
     let user: User | null = null;
 
     if (pool) {
-      const res = await pool.query('SELECT * FROM users WHERE email = $1', [cleanEmail]);
+      const res = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [cleanEmail]);
       if (res.rows.length > 0) {
         user = res.rows[0];
       }
@@ -28,17 +29,29 @@ export async function POST(req: NextRequest) {
       user = memoryStore.users.find((u) => u.email.toLowerCase() === cleanEmail) || null;
     }
 
-    if (!user || !user.password_hash) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Credenciais inválidas. Verifique seu e-mail e senha.' },
+        { error: 'Nenhuma conta encontrada com este e-mail. Verifique o endereço digitado ou crie um cadastro.' },
         { status: 401 }
       );
     }
 
-    const isValid = await comparePassword(password, user.password_hash);
+    if (!user.password_hash) {
+      return NextResponse.json(
+        { error: 'Esta conta utiliza login via Google. Por favor, entre clicando no botão "Continuar com Google".' },
+        { status: 401 }
+      );
+    }
+
+    // Try exact password and trimmed password
+    let isValid = await comparePassword(password, user.password_hash);
+    if (!isValid && cleanPassword !== password) {
+      isValid = await comparePassword(cleanPassword, user.password_hash);
+    }
+
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Credenciais inválidas. Verifique seu e-mail e senha.' },
+        { error: 'Senha incorreta. Verifique a senha digitada ou utilize "Esqueceu a senha?".' },
         { status: 401 }
       );
     }

@@ -77,8 +77,10 @@ export class NeonDatabaseAdapter {
 }
 
 // Global singleton
+// Global singleton
 declare global {
   var _neonAdapter: NeonDatabaseAdapter | undefined;
+  var _memoryStore: LocalStoreState | undefined;
 }
 
 export function getDatabasePool(): NeonDatabaseAdapter | null {
@@ -123,17 +125,21 @@ export interface LocalStoreState {
   insights: Insight[];
 }
 
-export const memoryStore: LocalStoreState = {
-  users: [],
-  categories: [],
-  income: [],
-  expenses: [],
-  budgets: [],
-  goals: [],
-  goal_contributions: [],
-  strategies: [],
-  insights: [],
-};
+if (!global._memoryStore) {
+  global._memoryStore = {
+    users: [],
+    categories: [],
+    income: [],
+    expenses: [],
+    budgets: [],
+    goals: [],
+    goal_contributions: [],
+    strategies: [],
+    insights: [],
+  };
+}
+
+export const memoryStore: LocalStoreState = global._memoryStore;
 
 export async function initPostgresSchema(dbPool: any): Promise<void> {
   const schemaSql = `

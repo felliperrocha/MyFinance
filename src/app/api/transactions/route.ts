@@ -59,11 +59,13 @@ export async function GET(req: NextRequest) {
       filtered = filtered.filter((t) => (t as any).category_id === category);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       transactions: filtered,
       incomes,
       expenses,
     });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return response;
   } catch (error) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json({ error: 'Erro ao buscar transações' }, { status: 500 });
@@ -82,10 +84,10 @@ export async function POST(req: NextRequest) {
     const { transaction_type, description, amount, date, category_id, income_type, recurrence, payment_method, notes } = body;
 
     const pool = getDatabasePool();
-    const numAmount = Math.abs(parseFloat(amount));
+    const numAmount = Math.abs(parseFloat(amount)) || 0;
 
     if (transaction_type === 'income') {
-      const newIncome: Income = {
+      const newIncome: any = {
         id: `inc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         user_id: userId,
         description: description || 'Receita sem descrição',
@@ -94,6 +96,8 @@ export async function POST(req: NextRequest) {
         income_type: income_type || 'salary',
         recurrence: recurrence || 'monthly',
         created_at: new Date().toISOString(),
+        transaction_type: 'income',
+        category_name: 'Receita',
       };
 
       if (pool) {
@@ -107,19 +111,39 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json(newIncome, { status: 201 });
     } else {
-      let categoryName = 'Outros';
+      let resolvedCategoryId = category_id;
+      let categoryName = 'Geral';
+
       if (pool) {
-        const cRes = await pool.query('SELECT name FROM categories WHERE id = $1', [category_id]);
-        if (cRes.rows.length > 0) categoryName = cRes.rows[0].name;
+        if (category_id) {
+          const cRes = await pool.query('SELECT name FROM categories WHERE id = $1', [category_id]);
+          if (cRes.rows.length > 0) {
+            categoryName = cRes.rows[0].name;
+          }
+        }
+        if (!resolvedCategoryId) {
+          const userCats = await pool.query('SELECT id, name FROM categories WHERE user_id = $1 LIMIT 1', [userId]);
+          if (userCats.rows.length > 0) {
+            resolvedCategoryId = userCats.rows[0].id;
+            categoryName = userCats.rows[0].name;
+          }
+        }
       } else {
-        const cat = memoryStore.categories.find((c) => c.id === category_id);
-        if (cat) categoryName = cat.name;
+        if (category_id) {
+          const cat = memoryStore.categories.find((c) => c.id === category_id);
+          if (cat) categoryName = cat.name;
+        }
+        if (!resolvedCategoryId && memoryStore.categories.length > 0) {
+          const userCat = memoryStore.categories.find((c) => c.user_id === userId) || memoryStore.categories[0];
+          resolvedCategoryId = userCat.id;
+          categoryName = userCat.name;
+        }
       }
 
-      const newExpense: Expense = {
+      const newExpense: any = {
         id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         user_id: userId,
-        category_id: category_id || 'cat-9',
+        category_id: resolvedCategoryId || 'cat-general',
         category_name: categoryName,
         description: description || 'Despesa sem descrição',
         amount: numAmount,
@@ -128,6 +152,7 @@ export async function POST(req: NextRequest) {
         recurrence: recurrence || 'one-time',
         notes: notes || '',
         created_at: new Date().toISOString(),
+        transaction_type: 'expense',
       };
 
       if (pool) {

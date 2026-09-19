@@ -8,6 +8,7 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import EvolutionChart from '@/components/dashboard/EvolutionChart';
 import FeaturedGoal from '@/components/dashboard/FeaturedGoal';
 import FeaturedInsight from '@/components/dashboard/FeaturedInsight';
+import QuickStartGuide from '@/components/dashboard/QuickStartGuide';
 import TransactionModal from '@/components/transactions/TransactionModal';
 import GoalModal from '@/components/goals/GoalModal';
 import ContributionModal from '@/components/goals/ContributionModal';
@@ -138,6 +139,13 @@ export default function HomePage() {
         ) : (
           /* Authenticated Dashboard */
           <>
+            {/* Beginner Quick Start Guide */}
+            <QuickStartGuide
+              onAddIncome={() => setIsIncomeModalOpen(true)}
+              onAddExpense={() => setIsExpenseModalOpen(true)}
+              onAddGoal={() => setIsGoalModalOpen(true)}
+            />
+
             {/* Top 4 Financial Metric Cards */}
             <div
               style={{
