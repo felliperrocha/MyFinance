@@ -25,13 +25,23 @@ export default function Header({
   const currentUser = propUser !== undefined ? propUser : auth.user;
   const isLoading = auth.loading && propUser === undefined;
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<'hero' | 'recursos' | 'sobre'>('hero');
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
+      setIsScrolled(window.scrollY > 20);
+
+      const sobreEl = document.getElementById('sobre');
+      const recursosEl = document.getElementById('recursos');
+
+      const scrollPos = window.scrollY + 220;
+
+      if (sobreEl && scrollPos >= sobreEl.offsetTop) {
+        setActiveSection('sobre');
+      } else if (recursosEl && scrollPos >= recursosEl.offsetTop) {
+        setActiveSection('recursos');
       } else {
-        setIsScrolled(false);
+        setActiveSection('hero');
       }
     };
     window.addEventListener('scroll', handleScroll);
@@ -57,6 +67,9 @@ export default function Header({
   };
 
   const scrollToSection = (id: string) => {
+    if (id === 'hero' || id === 'recursos' || id === 'sobre') {
+      setActiveSection(id);
+    }
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
@@ -180,60 +193,24 @@ export default function Header({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '2.25rem',
+          gap: '2rem',
         }}
       >
         <button
           onClick={() => scrollToSection('hero')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            color: '#FFFFFF',
-            cursor: 'pointer',
-            borderBottom: '2px solid #FFFFFF',
-            paddingBottom: '2px',
-          }}
+          className={`landing-nav-btn ${activeSection === 'hero' ? 'active' : ''}`}
         >
           Início
         </button>
         <button
-          onClick={() => scrollToSection('como-funciona')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#94A3B8',
-            cursor: 'pointer',
-          }}
-        >
-          Como funciona
-        </button>
-        <button
           onClick={() => scrollToSection('recursos')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#94A3B8',
-            cursor: 'pointer',
-          }}
+          className={`landing-nav-btn ${activeSection === 'recursos' ? 'active' : ''}`}
         >
           Recursos
         </button>
         <button
           onClick={() => scrollToSection('sobre')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#94A3B8',
-            cursor: 'pointer',
-          }}
+          className={`landing-nav-btn ${activeSection === 'sobre' ? 'active' : ''}`}
         >
           Sobre
         </button>

@@ -105,6 +105,14 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+#hero, #recursos, #sobre, #story {
+  scroll-margin-top: 80px;
+}
+
 html, body {
   font-family: var(--font-jakarta), var(--font-inter);
   background-color: var(--color-bg-main);
@@ -240,6 +248,42 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(255, 255, 255, 0.25);
 }
 
+/* Landing Navigation Item Button */
+.landing-nav-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-jakarta);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  position: relative;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.landing-nav-btn:hover {
+  color: #FFFFFF;
+}
+
+.landing-nav-btn.active {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.landing-nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 2px;
+  background-color: #FFFFFF;
+  border-radius: 2px;
+}
+
 /* Form Controls */
 .mf-input, .mf-select, .mf-textarea {
   width: 100%;
@@ -353,4 +397,10 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-full);
+}
+
+@media (max-width: 880px) {
+  .hero-reference-card-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

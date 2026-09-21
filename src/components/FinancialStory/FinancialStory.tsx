@@ -159,7 +159,7 @@ export default function FinancialStory({ onOpenRegister, onOpenLogin }: Financia
       {/* ─────────────────────────────────────────────────────────────
           PARALLAX FEATURE CARDS SECTION (SPEC 18 & 19)
           ───────────────────────────────────────────────────────────── */}
-      <section className="feature-parallax-section">
+      <section id="recursos" className="feature-parallax-section">
         
         {/* Editorial Section Header */}
         <div className="feature-editorial-header">

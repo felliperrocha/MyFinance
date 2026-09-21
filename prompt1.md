@@ -1,4 +1,3 @@
-file:///d%3A/MyFinance/prompt1.md {"mtime":1788128292514,"ctime":1788128292514,"size":0,"etag":"3gj4ab4ih0","orphaned":false,"typeId":""}
 # MYFINANCE — COMPLETE PROJECT DEVELOPMENT PROMPT
 
 Build a complete, modern and functional personal financial management web application called **MyFinance**.
