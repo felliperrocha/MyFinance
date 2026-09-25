@@ -113,17 +113,9 @@ export default function FinancialStory({ onOpenRegister, onOpenLogin }: Financia
           margin: '0 auto',
         }}
       >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1.3fr',
-            gap: '4rem',
-            alignItems: 'flex-start',
-          }}
-        >
-          
+        <div className="story-scroll-grid">
           {/* Left Column: 4 Sequential Scroll Step Cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8rem', padding: '2rem 0' }}>
+          <div className="story-steps-column">
             {steps.map((step, idx) => (
               <motion.div
                 key={idx}
@@ -149,7 +141,7 @@ export default function FinancialStory({ onOpenRegister, onOpenLogin }: Financia
           </div>
 
           {/* Right Column: Pinned Graph Following the Scroll */}
-          <div style={{ position: 'sticky', top: '120px', width: '100%' }}>
+          <div className="story-graph-column">
             <FinancialGraph progress={smoothProgress} />
           </div>
 
@@ -184,58 +176,6 @@ export default function FinancialStory({ onOpenRegister, onOpenLogin }: Financia
           ))}
         </div>
 
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────
-          FINAL CALL TO ACTION BANNER (SPEC 30)
-          ───────────────────────────────────────────────────────────── */}
-      <section
-        style={{
-          padding: '6rem 2.5rem 8rem',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '24px',
-            padding: '4.5rem 2.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1.5rem',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-          }}
-        >
-          <span style={{ fontSize: '0.78125rem', fontWeight: 700, letterSpacing: '0.1em', color: '#10B981', textTransform: 'uppercase' }}>
-            PRONTO PARA COMEÇAR?
-          </span>
-          <h2 style={{ fontSize: '3rem', fontWeight: 800, color: '#FFFFFF', maxWidth: '700px', lineHeight: 1.1 }}>
-            Comece a transformar sua vida financeira.
-          </h2>
-          <p style={{ fontSize: '1.05rem', color: '#94A3B8', maxWidth: '520px', lineHeight: 1.6 }}>
-            Crie sua conta gratuitamente e experimente uma nova forma de interagir com seu patrimônio.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button
-              onClick={onOpenRegister}
-              className="btn-pill-white"
-              style={{ padding: '0.85rem 2.25rem', fontSize: '0.9375rem' }}
-            >
-              Criar conta gratuita →
-            </button>
-            <button
-              onClick={onOpenLogin}
-              className="btn-pill-dark"
-              style={{ padding: '0.85rem 1.85rem', fontSize: '0.9375rem' }}
-            >
-              Entrar
-            </button>
-          </div>
-        </div>
       </section>
 
     </div>

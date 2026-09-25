@@ -154,7 +154,7 @@ export default function SettingsPage() {
               </h3>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="two-col-form-grid">
               <div>
                 <label className="mf-label">Nome Completo</label>
                 <input
@@ -187,7 +187,7 @@ export default function SettingsPage() {
               </h3>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="two-col-form-grid">
               <div>
                 <label className="mf-label">Moeda Padrão</label>
                 <select
@@ -289,7 +289,7 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="two-col-form-grid">
               <div>
                 <label className="mf-label">Nova Senha</label>
                 <input

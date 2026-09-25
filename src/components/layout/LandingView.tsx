@@ -185,7 +185,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
           style={{
             position: 'relative',
             zIndex: 1,
-            fontSize: 'clamp(2.5rem, 4.5vw, 3.75rem)',
+            fontSize: 'clamp(1.9rem, 5.5vw, 3.75rem)',
             fontWeight: 800,
             letterSpacing: '-0.04em',
             lineHeight: 1.08,
@@ -347,8 +347,8 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
                 style={{
                   paddingTop: cardInnerPaddingTop,
                   paddingBottom: 'clamp(2rem, 4vh, 4rem)',
-                  paddingLeft: 'clamp(2rem, 4vw, 4.5rem)',
-                  paddingRight: 'clamp(1.5rem, 3.5vw, 3.5rem)',
+                  paddingLeft: 'clamp(1.25rem, 4vw, 4.5rem)',
+                  paddingRight: 'clamp(1.25rem, 3.5vw, 3.5rem)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -388,7 +388,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
 
                   <div
                     style={{
-                      fontSize: 'clamp(2.5rem, 4vw, 3.75rem)',
+                      fontSize: 'clamp(1.85rem, 4vw, 3.75rem)',
                       fontWeight: 800,
                       color: '#FFFFFF',
                       letterSpacing: '-0.035em',
@@ -419,7 +419,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1.5rem',
+                    gap: '1.25rem',
                     marginTop: '1.5rem',
                     flexWrap: 'wrap',
                   }}
@@ -433,7 +433,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
                   </div>
 
                   {/* Vertical Divider */}
-                  <div style={{ width: '1px', height: '28px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+                  <div className="cockpit-divider" style={{ width: '1px', height: '28px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
 
                   {/* Feature 2 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -444,7 +444,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
                   </div>
 
                   {/* Vertical Divider */}
-                  <div style={{ width: '1px', height: '28px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+                  <div className="cockpit-divider" style={{ width: '1px', height: '28px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
 
                   {/* Feature 3 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -458,6 +458,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
 
               {/* Right Column: High-End Phone Mockup with Native HD Resolution */}
               <div
+                className="hero-mockup-column"
                 style={{
                   position: 'relative',
                   width: '100%',
@@ -505,7 +506,7 @@ export default function LandingView({ onOpenLogin, onOpenRegister }: LandingView
       {/* ─────────────────────────────────────────────────────────────
           INSTITUTIONAL "SOBRE" SECTION
           ───────────────────────────────────────────────────────────── */}
-      <AboutSection onOpenRegister={onOpenRegister} />
+      <AboutSection onOpenRegister={onOpenRegister} onOpenLogin={onOpenLogin} />
 
       {/* ─────────────────────────────────────────────────────────────
           LANDING FOOTER

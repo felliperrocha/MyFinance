@@ -171,13 +171,7 @@ export default function StrategiesPage() {
         </div>
 
         {/* Strategies Grid */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '1.25rem',
-          }}
-        >
+        <div className="strategies-grid">
           {filteredStrategies.map((strat) => {
             const typeLabels: Record<string, string> = {
               savings: 'Economia',

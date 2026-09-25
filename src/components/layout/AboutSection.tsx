@@ -6,9 +6,10 @@ import { Sparkles, Compass, ShieldCheck, Eye, ArrowRight, Quote } from 'lucide-r
 
 interface AboutSectionProps {
   onOpenRegister?: () => void;
+  onOpenLogin?: () => void;
 }
 
-export default function AboutSection({ onOpenRegister }: AboutSectionProps) {
+export default function AboutSection({ onOpenRegister, onOpenLogin }: AboutSectionProps) {
   const pillars = [
     {
       icon: Compass,
@@ -95,7 +96,7 @@ export default function AboutSection({ onOpenRegister }: AboutSectionProps) {
 
           <h2
             style={{
-              fontSize: '3rem',
+              fontSize: 'clamp(2rem, 4.5vw, 3rem)',
               fontWeight: 800,
               letterSpacing: '-0.035em',
               color: '#FFFFFF',
@@ -217,7 +218,7 @@ export default function AboutSection({ onOpenRegister }: AboutSectionProps) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
               gap: '1.75rem',
             }}
           >
@@ -304,6 +305,108 @@ export default function AboutSection({ onOpenRegister }: AboutSectionProps) {
           </div>
         </div>
 
+        {/* Bottom CTA Conversion Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-10% 0px' }}
+          transition={{ duration: 0.5 }}
+          style={{
+            position: 'relative',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '24px',
+            padding: 'clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3rem)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1.25rem',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Subtle top accent bar */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '260px',
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent, #10B981, transparent)',
+            }}
+          />
+
+          <span
+            style={{
+              fontSize: '0.78125rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              color: '#10B981',
+              textTransform: 'uppercase',
+            }}
+          >
+            PRONTO PARA COMEÇAR?
+          </span>
+
+          <h3
+            style={{
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              color: '#FFFFFF',
+              maxWidth: '700px',
+              lineHeight: 1.15,
+              margin: 0,
+            }}
+          >
+            Transforme sua vida financeira hoje mesmo.
+          </h3>
+
+          <p
+            style={{
+              fontSize: 'clamp(0.9375rem, 1.2vw, 1.05rem)',
+              color: '#94A3B8',
+              maxWidth: '560px',
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            Crie sua conta gratuitamente e experimente uma nova forma de planejar, controlar e projetar suas conquistas.
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              marginTop: '0.5rem',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            {onOpenRegister && (
+              <button
+                onClick={onOpenRegister}
+                className="btn-pill-white"
+                style={{ padding: '0.85rem 2.25rem', fontSize: '0.9375rem' }}
+              >
+                <span>Criar minha conta gratuita</span>
+                <ArrowRight size={17} />
+              </button>
+            )}
+            {onOpenLogin && (
+              <button
+                onClick={onOpenLogin}
+                className="btn-pill-dark"
+                style={{ padding: '0.85rem 1.85rem', fontSize: '0.9375rem' }}
+              >
+                <span>Entrar</span>
+              </button>
+            )}
+          </div>
+        </motion.div>
 
       </div>
     </section>

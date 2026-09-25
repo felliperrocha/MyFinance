@@ -174,7 +174,7 @@ export default function TransactionsPage() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => fetchTransactions()}
                   className="mf-btn mf-btn-secondary mf-btn-sm"
@@ -285,10 +285,10 @@ export default function TransactionsPage() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', flex: 2 }}>
                 <select
                   className="mf-select"
-                  style={{ width: 'auto', padding: '0.45rem 0.75rem' }}
+                  style={{ width: 'auto', flex: '1 1 140px', padding: '0.45rem 0.75rem' }}
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as any)}
                 >
@@ -299,7 +299,7 @@ export default function TransactionsPage() {
 
                 <select
                   className="mf-select"
-                  style={{ width: 'auto', padding: '0.45rem 0.75rem' }}
+                  style={{ width: 'auto', flex: '1 1 140px', padding: '0.45rem 0.75rem' }}
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                 >
@@ -313,7 +313,7 @@ export default function TransactionsPage() {
 
                 <select
                   className="mf-select"
-                  style={{ width: 'auto', padding: '0.45rem 0.75rem' }}
+                  style={{ width: 'auto', flex: '1 1 140px', padding: '0.45rem 0.75rem' }}
                   value={recurrenceFilter}
                   onChange={(e) => setRecurrenceFilter(e.target.value)}
                 >

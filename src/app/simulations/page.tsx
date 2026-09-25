@@ -75,14 +75,7 @@ export default function SimulationsPage() {
         </div>
 
         {/* Simulator Grid (Controls on Left, Results on Right) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-            gap: '1.5rem',
-            alignItems: 'start',
-          }}
-        >
+        <div className="simulations-grid">
           {/* Controls Form */}
           <div className="mf-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--color-primary-black)' }}>
@@ -108,7 +101,7 @@ export default function SimulationsPage() {
             )}
 
             {/* Target & Initial */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className="two-col-form-grid">
               <div>
                 <label className="mf-label">Valor Alvo (R$)</label>
                 <input

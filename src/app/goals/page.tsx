@@ -170,13 +170,7 @@ export default function GoalsPage() {
             </div>
 
             {/* Goals Cards Grid */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem',
-              }}
-            >
+            <div className="goals-grid">
               {goals.length === 0 ? (
                 <div className="mf-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2.5rem', color: 'var(--color-medium-gray)' }}>
                   Nenhuma meta cadastrada ainda. Clique em &quot;Criar Nova Meta&quot; acima para começar!

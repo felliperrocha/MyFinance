@@ -150,13 +150,7 @@ export default function BudgetsPage() {
         )}
 
         {/* Category Budget Cards Grid */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.25rem',
-          }}
-        >
+        <div className="budgets-grid">
           {budgets.map((b) => {
             const spent = Number(b.spent_amount || 0);
             const limit = Number(b.monthly_limit);

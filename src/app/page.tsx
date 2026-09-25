@@ -192,13 +192,7 @@ export default function HomePage() {
             <FeaturedInsight insight={featuredInsight} />
 
             {/* Middle Section: Evolution Chart & Goals Progress */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-                gap: '1.5rem',
-              }}
-            >
+            <div className="dashboard-charts-grid">
               <EvolutionChart />
               <FeaturedGoal
                 goals={goals}

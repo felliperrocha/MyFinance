@@ -141,7 +141,8 @@ export default function VideoScrollStory({
     ctx.fillRect(0, 0, width, height);
 
     // Grid Margins
-    const marginX = width * 0.10;
+    const isMobile = width < 640;
+    const marginX = isMobile ? Math.max(68, width * 0.16) : width * 0.10;
     const usableWidth = width - marginX * 2;
     const startY = height * 0.78;
     const peakY = height * 0.24;
@@ -172,7 +173,7 @@ export default function VideoScrollStory({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillText(step.label, marginX - 16, y + 4);
+      ctx.fillText(step.label, marginX - (isMobile ? 10 : 16), y + 4);
     });
 
     // X-Axis Timeline Month Labels
@@ -274,7 +275,8 @@ export default function VideoScrollStory({
     // 4. DYNAMIC PILL POSITIONING: Make the Projeção Financeira pill follow the lead node of the chart!
     if (pillRef.current) {
       // Clamp X position so pill stays nicely within screen margins
-      const pillHalfWidth = 200;
+      const isMobile = width < 640;
+      const pillHalfWidth = isMobile ? 115 : 190;
       const clampedX = Math.min(Math.max(lastX, pillHalfWidth), width - pillHalfWidth);
 
       // Clamp Y position so pill stays at least 90px below top (never cut off by top navbar!)
@@ -372,7 +374,7 @@ export default function VideoScrollStory({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10B981', fontSize: '0.78125rem', fontWeight: 800, letterSpacing: '0.04em' }}>
             <Sparkles size={15} />
-            <span>PROJEÇÃO FINANCEIRA:</span>
+            <span className="pill-prefix">PROJEÇÃO FINANCEIRA:</span>
           </div>
 
           <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }} className="tabular-nums">

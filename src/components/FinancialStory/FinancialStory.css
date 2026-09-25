@@ -207,3 +207,55 @@
   color: #94A3B8;
   line-height: 1.6;
 }
+
+/* Story Scroll Grid & Responsive Rules */
+.story-scroll-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 4rem;
+  align-items: flex-start;
+}
+
+.story-steps-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8rem;
+  padding: 2rem 0;
+}
+
+.story-graph-column {
+  position: sticky;
+  top: 120px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .story-scroll-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2.5rem !important;
+  }
+  .story-steps-column {
+    gap: 4rem !important;
+    padding: 1rem 0 !important;
+  }
+  .story-graph-column {
+    position: relative !important;
+    top: 0 !important;
+  }
+  .feature-parallax-section {
+    padding: 4.5rem 1.25rem 3.5rem !important;
+  }
+  .feature-editorial-title {
+    font-size: clamp(2rem, 5.5vw, 3.5rem) !important;
+  }
+  .story-title {
+    font-size: clamp(1.85rem, 5vw, 2.75rem) !important;
+  }
+  .parallax-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+  .parallax-card-item {
+    padding: 1.5rem !important;
+  }
+}
